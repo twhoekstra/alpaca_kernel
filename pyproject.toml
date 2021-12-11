@@ -3,11 +3,11 @@ requires = ["flit_core >=2,<4"]
 build-backend = "flit_core.buildapi"
 
 [tool.flit.metadata]
-module = "jupyter_micropython_kernel"
+module = "alpaca_kernel"
 description-file = "README.md"
 author = "Julian Todd, Tony DiCola"
 author-email = "julian@goatchurch.org.uk"
-home-page = "https://github.com/goatchurchprime/jupyter_micropython_kernel"
+home-page = "https://github.com/goatchurchprime/alpaca_kernel"
 requires-python=">=3.0"
 requires=[
     "pyserial>=3.4",

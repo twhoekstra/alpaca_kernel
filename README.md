@@ -15,30 +15,30 @@ First install Jupyter: http://jupyter.org/install.html (the Python3 version).
 ### Via PyPi
 
 ```
-pip install jupyter_micropython_kernel
-python -m jupyter_micropython_kernel.install
+pip install alpaca_kernel
+python -m alpaca_kernel.install
 ```
 
 ### Manual Installation (more maintainable)
 
 Clone this repository to a directory using TortoiseGIT or with the shell command (ie on a command line):
 
-    git clone https://github.com/goatchurchprime/jupyter_micropython_kernel.git
+    git clone https://github.com/goatchurchprime/alpaca_kernel.git
 
 On **Windows**, Install this library (in editable mode) into Python3 using the shell command:
 
-    pip install jupyter_micropython_kernel
+    pip install alpaca_kernel
 
 On **Linux**, you can install this library in editable mode using symlinks, which makes it easy to `git pull` a debugged version later:
 
-    pip install -e jupyter_micropython_kernel
+    pip install -e alpaca_kernel
 
 Things can go wrong here, and you might need "pip3" or "sudo pip" if you have 
 numerous different versions of python installed
 
 Install the kernel into jupyter itself using the shell command:
 
-    python -m jupyter_micropython_kernel.install
+    python -m alpaca_kernel.install
 
 This creates the small file ".local/share/jupyter/kernels/micropython/kernel.json" 
 that jupyter uses to reference it's kernels
@@ -158,7 +158,7 @@ if the notebook can independently issue Ctrl-C KeyboardInterrupt signals into th
 a need to worry about what happens when it hangs waiting for input from a serial connection.  
 
 Other known projects that have implemented a Jupyter Micropython kernel are:
-* https://github.com/adafruit/jupyter_micropython_kernel
+* https://github.com/adafruit/alpaca_kernel
 * https://github.com/willingc/circuitpython_kernel
 * https://github.com/TDAbboud/mpkernel
 * https://github.com/takluyver/ubit_kernel
