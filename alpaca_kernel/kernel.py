@@ -1,5 +1,9 @@
 from ipykernel.kernelbase import Kernel
 import IPython
+import matplotlib.pyplot as plt
+import urllib, base64
+from io import BytesIO
+import numpy as np
 
 import logging, sys, time, os, re
 import serial, socket, serial.tools.list_ports, select
@@ -14,6 +18,8 @@ serialtimeoutcount = 10
 
 # use of argparse for handling the %commands in the cells
 import argparse, shlex
+
+ap_plot = argparse.ArgumentParser(prog="%plot", add_help=False)
 
 ap_serialconnect = argparse.ArgumentParser(prog="%serialconnect", add_help=False)
 ap_serialconnect.add_argument('--raw', help='Just open connection', action='store_true')
@@ -91,7 +97,34 @@ def parseap(ap, percentstringargs1):
         return ap.parse_known_args(percentstringargs1)[0]
     except SystemExit:  # argparse throws these because it assumes you only want to do the command line
         return None  # should be a default one
-        
+
+### HELPER FUNCTIONS ###s
+
+def _to_png(fig):
+    """Return a base64-encoded PNG from a
+    matplotlib figure."""
+    imgdata = BytesIO()
+    fig.savefig(imgdata, format='png')
+    imgdata.seek(0)
+    return urllib.parse.quote(
+        base64.b64encode(imgdata.getvalue()))
+
+def string_to_numpy(string):
+    line_Items = []
+    width = None
+    for line in string.split("],"):
+        line_Parts = line.split()
+        n = len(line_Parts)
+        if n==0:
+            continue
+        if width is None:
+            width = n
+        else:
+            assert n == width, "Invalid Array"
+        line = line.split("[")[-1].split("]")[0]
+
+        line_Items.append(np.fromstring(line, dtype=float, sep=','))
+    return np.array(line_Items)
 
 # Complete streaming of data to file with a quiet mode (listing number of lines)
 # Set this up for pulse reading and plotting in a second jupyter page
@@ -120,11 +153,11 @@ def parseap(ap, percentstringargs1):
 # to the web-browser
 
 
-class MicroPythonKernel(Kernel):
-    implementation = 'micropython_kernel'
+class ALPACAKernel(Kernel):
+    implementation = 'alpaca_kernel'
     implementation_version = "v3"
 
-    banner = "MicroPython Serializer"
+    banner = "MicroPython Serializer for ALPACA"
 
     language_info = {'name': 'micropython',
                      'codemirror_mode': 'python',
@@ -305,6 +338,18 @@ class MicroPythonKernel(Kernel):
         if not self.dc.serialexists():
             return cellcontents
 
+            
+        if percentcommand == ap_plot.prog:
+            apargs = parseap(ap_capture, percentstringargs[1:])
+            if apargs:
+                self.sres("Writing output to file {}\n\n".format(apargs.outputfilename), asciigraphicscode=32)
+                self.srescapturedoutputfile = open(apargs.outputfilename, "w")
+                self.srescapturemode = (3 if apargs.QUIET else (2 if apargs.quiet else 1))
+                self.srescapturedlinecount = 0
+            else:
+                self.sres(ap_capture.format_help())
+            return cellcontents
+
         if percentcommand == ap_capture.prog:
             apargs = parseap(ap_capture, percentstringargs[1:])
             if apargs:
@@ -315,6 +360,8 @@ class MicroPythonKernel(Kernel):
             else:
                 self.sres(ap_capture.format_help())
             return cellcontents
+
+        
 
         if percentcommand == ap_writebytes.prog:
             # (not effectively using the --binary setting)
@@ -541,6 +588,61 @@ class MicroPythonKernel(Kernel):
             output = "\x1b[{}m{}\x1b[0m".format(asciigraphicscode, output)
         stream_content = {'name': ("stdout" if n04count == 0 else "stderr"), 'text': output }
         self.send_response(self.iopub_socket, 'stream', stream_content)
+
+    def plot_sres(self, output):
+        if self.silent:
+            return
+        assert type(output) is str, "Output sent to plot_sres is not str"
+        data = string_to_numpy(output)
+
+        assert len(data) == 2, "Array to be plotted should be 2D with two rows"
+        
+        # We create the plot with matplotlib.
+        fig, ax = plt.subplots(1, 1, figsize=(6,4),
+                               dpi=100)
+        
+        ax.plot(data[0,:], data[0,:])
+
+        # We create a PNG out of this plot.
+        png = _to_png(fig)
+
+
+        # We send the standard output to the
+        # client.
+        self.send_response(
+            self.iopub_socket,
+            'stream', {
+                'name': 'stdout',
+                'data': ('Plotting {n} '
+                        'data points'). \
+                        format(n=len(data.shape[1]))})
+
+        # We prepare the response with our rich
+        # data (the plot).
+        content = {
+            'source': 'kernel',
+
+            # This dictionary may contain
+            # different MIME representations of
+            # the output.
+            'data': {
+                'image/png': png
+            },
+
+            # We can specify the image size
+            # in the metadata field.
+            'metadata' : {
+                'image/png' : {
+                    'width': 600,
+                    'height': 400
+                }
+                }
+        }
+
+        # We send the display_data message with
+        # the contents.
+        self.send_response(self.iopub_socket,
+            'display_data', content)
 
     def do_execute(self, code, silent, store_history=True, user_expressions=None, allow_stdin=False):
         self.silent = silent

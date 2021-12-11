@@ -9,9 +9,9 @@ from IPython.utils.tempdir import TemporaryDirectory
 # copied out from https://github.com/takluyver/bash_kernel/blob/master/bash_kernel/install.py
 
 # sys.executable should be "python3"
-kernel_json = { "argv": [sys.executable, "-m", "jupyter_micropython_kernel", "-f", "{connection_file}"],
- "display_name": "MicroPython - USB",
- "language": "micropython"
+kernel_json = { "argv": [sys.executable, "-m", "alpaca_kernel", "-f", "{connection_file}"],
+ "display_name": "ALPACA - USB",
+ "language": "alpaca"
 }
 
 
@@ -24,11 +24,11 @@ def install_my_kernel_spec(user=True, prefix=None):
             json.dump(kernel_json, f, sort_keys=True)
         # TODO: Copy resources once they're specified
 
-        print('Installing IPython kernel spec of micropython')
+        print('Installing IPython kernel spec of alpaca')
         k = KernelSpecManager()
-        k.install_kernel_spec(td, 'Micropython', user=user, replace=True, prefix=prefix)
+        k.install_kernel_spec(td, 'ALPACA', user=user, replace=True, prefix=prefix)
         
-        h = k.get_kernel_spec("micropython")
+        h = k.get_kernel_spec("alpaca")
         print("...into", h.resource_dir)
         
 
@@ -40,7 +40,7 @@ def _is_root():
 
 def main(argv=None):
     parser = argparse.ArgumentParser(
-        description='Install KernelSpec for MicroPython Kernel'
+        description='Install KernelSpec for ALPACA Kernel'
     )
     prefix_locations = parser.add_mutually_exclusive_group()
 
