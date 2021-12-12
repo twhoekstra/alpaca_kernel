@@ -517,10 +517,10 @@ class ALPACAKernel(Kernel):
                 self.dc.writeline(line)
                 r = self.dc.workingserialreadall()
                 if r:
-                    if True: #self.sresplotmode == 1:
-                        self.sres('[duringwriting] ')
+                    if self.sresplotmode == 1:
+                        self.sres('Plotting ON')
                         self.sresPLOT(str(r))
-                    else: # Normal REPL
+                    else: 
                         self.sres('[duringwriting] ')
                         self.sres(str(r))
 
