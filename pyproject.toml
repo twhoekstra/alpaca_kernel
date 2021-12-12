@@ -5,9 +5,9 @@ build-backend = "flit_core.buildapi"
 [tool.flit.metadata]
 module = "alpaca_kernel"
 description-file = "README.md"
-author = "Julian Todd, Tony DiCola"
-author-email = "julian@goatchurch.org.uk"
-home-page = "https://github.com/goatchurchprime/alpaca_kernel"
+author = "Thijn Hoekstra"
+author-email = "t.w.hoekstra@student.tudelft.nl"
+home-page = "https://github.com/twhoekstra/alpaca_kernel"
 requires-python=">=3.0"
 requires=[
     "pyserial>=3.4",
