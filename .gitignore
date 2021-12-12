@@ -7,6 +7,9 @@ __pycache__/
 # C extensions
 *.so
 
+# Workspace
+alpaca_kernel.code-workspace
+
 # Distribution / packaging
 .Python
 env/

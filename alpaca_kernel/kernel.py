@@ -174,6 +174,8 @@ class ALPACAKernel(Kernel):
         self.srescapturedoutputfile = None  # used by %capture command
         self.srescapturedlinecount = 0
         self.srescapturedlasttime = 0       # to control the frequency of capturing reported
+
+        self.sresplotmode = 0 # 0 plottinf off, 1 plotting on 
         
         
     def interpretpercentline(self, percentline, cellcontents):
@@ -340,14 +342,7 @@ class ALPACAKernel(Kernel):
 
             
         if percentcommand == ap_plot.prog:
-            apargs = parseap(ap_capture, percentstringargs[1:])
-            if apargs:
-                self.sres("Writing output to file {}\n\n".format(apargs.outputfilename), asciigraphicscode=32)
-                self.srescapturedoutputfile = open(apargs.outputfilename, "w")
-                self.srescapturemode = (3 if apargs.QUIET else (2 if apargs.quiet else 1))
-                self.srescapturedlinecount = 0
-            else:
-                self.sres(ap_capture.format_help())
+            self.sresplotmode = 1
             return cellcontents
 
         if percentcommand == ap_capture.prog:
@@ -522,8 +517,12 @@ class ALPACAKernel(Kernel):
                 self.dc.writeline(line)
                 r = self.dc.workingserialreadall()
                 if r:
-                    self.sres('[duringwriting] ')
-                    self.sres(str(r))
+                    if self.sresplotmode == 1:
+                        self.sresPLOT(str(r))
+                    else: # Normal REPL
+                        self.sres('[duringwriting] ')
+                        self.sres(str(r))
+
                     
         if not bsuppressendcode:
             self.dc.writebytes(b'\r\x04')
@@ -589,9 +588,10 @@ class ALPACAKernel(Kernel):
         stream_content = {'name': ("stdout" if n04count == 0 else "stderr"), 'text': output }
         self.send_response(self.iopub_socket, 'stream', stream_content)
 
-    def plot_sres(self, output):
+    def sresPLOT(self, output, asciigraphicscode=None, n04count=0, clear_output=False):
         if self.silent:
             return
+
         assert type(output) is str, "Output sent to plot_sres is not str"
         data = string_to_numpy(output)
 
@@ -599,13 +599,12 @@ class ALPACAKernel(Kernel):
         
         # We create the plot with matplotlib.
         fig, ax = plt.subplots(1, 1, figsize=(6,4),
-                               dpi=100)
+                            dpi=100)
         
         ax.plot(data[0,:], data[0,:])
 
         # We create a PNG out of this plot.
         png = _to_png(fig)
-
 
         # We send the standard output to the
         # client.
@@ -619,7 +618,7 @@ class ALPACAKernel(Kernel):
 
         # We prepare the response with our rich
         # data (the plot).
-        content = {
+        stream_content = {
             'source': 'kernel',
 
             # This dictionary may contain
@@ -642,7 +641,9 @@ class ALPACAKernel(Kernel):
         # We send the display_data message with
         # the contents.
         self.send_response(self.iopub_socket,
-            'display_data', content)
+                'display_data', content)
+
+        
 
     def do_execute(self, code, silent, store_history=True, user_expressions=None, allow_stdin=False):
         self.silent = silent
@@ -709,7 +710,9 @@ class ALPACAKernel(Kernel):
             self.srescapturedoutputfile.close()
             self.srescapturedoutputfile = None
             self.srescapturemode = 0
-            
+        
+        self.sresplotmode = 0 # Reset plot
+
         if interrupted:
             self.sresSYS("\n\n*** Sending Ctrl-C\n\n")
             if self.dc.serialexists():
