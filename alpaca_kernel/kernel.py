@@ -167,7 +167,7 @@ class ALPACAKernel(Kernel):
     def __init__(self, **kwargs):
         Kernel.__init__(self, **kwargs)
         self.silent = False
-        self.dc = deviceconnector.DeviceConnector(self.sres, self.sresSYS)
+        self.dc = deviceconnector.DeviceConnector(self.sres, self.sresSYS, self.sresPLOT)
         self.mpycrossexe = None
 
         self.srescapturemode = 0            # 0 none, 1 print lines, 2 print on-going line count (--quiet), 3 print only final line count (--QUIET)
@@ -517,17 +517,17 @@ class ALPACAKernel(Kernel):
                 self.dc.writeline(line)
                 r = self.dc.workingserialreadall()
                 if r:
-                    if self.sresplotmode == 1:
-                        self.sres('Plotting ON')
-                        self.sresPLOT(str(r))
-                    else: 
-                        self.sres('[duringwriting] ')
-                        self.sres(str(r))
+                    self.sres('[duringwriting] ')
+                    self.sres(str(r))
+
+                    #if self.sresplotmode == 1:
+                    #    self.sres('Plotting ON')
+                    #    self.sresPLOT(str(r))
 
                     
         if not bsuppressendcode:
             self.dc.writebytes(b'\r\x04')
-            self.dc.receivestream(bseekokay=True)
+            self.dc.receivestream(bseekokay=True, isplotting = self.sresplotmode)
         
     def sendcommand(self, cellcontents):
         bsuppressendcode = False  # can't yet see how to get this signal through

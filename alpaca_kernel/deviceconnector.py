@@ -84,7 +84,7 @@ def yieldserialchunk(s):
 
 
 class DeviceConnector:
-    def __init__(self, sres, sresSYS):
+    def __init__(self, sres, sresSYS, sresPLOT):
         self.workingserial = None
         self.workingsocket = None
         self.workingwebsocket = None
@@ -92,6 +92,7 @@ class DeviceConnector:
         self.sres = sres   # two output functions borrowed across
         self.sresSYS = sresSYS
         self._esptool_command = None
+        self.sresPLOT = sresPLOT
 
     def workingserialreadall(self):  # usually used to clear the incoming buffer, results are printed out rather than used
         if self.workingserial:
@@ -264,7 +265,7 @@ class DeviceConnector:
         for line in process.stderr:
             self.sres(line.decode(), n04count=1)
 
-    def receivestream(self, bseekokay, bwarnokaypriors=True, b5secondtimeout=False, bfetchfilecapture_nchunks=0):
+    def receivestream(self, bseekokay, isplotting = False, bwarnokaypriors=True, b5secondtimeout=False, bfetchfilecapture_nchunks=0):
         n04count = 0
         brebootdetected = False
         res = [ ]
@@ -334,7 +335,10 @@ class DeviceConnector:
                             if (i%10) == 0 and bfetchfilecapture_nchunks > 0:
                                 self.sres("%d%% fetched\n" % int(len(res)/bfetchfilecapture_nchunks*100 + 0.5), clear_output=True)
                         else:
-                            self.sres(ur, n04count=n04count)
+                            if not isplotting:
+                                self.sres(ur, n04count=n04count)
+                            else:
+                                self.sresPLOT(ur, n04count=n04count)
 
             # else on the for-loop, means the generator has ended at a stop iteration
             # this happens with Keyboard interrupt, and generator needs to be rebuilt
