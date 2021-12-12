@@ -618,7 +618,7 @@ class ALPACAKernel(Kernel):
 
         # We prepare the response with our rich
         # data (the plot).
-        stream_content = {
+        content = {
             'source': 'kernel',
 
             # This dictionary may contain
