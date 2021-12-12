@@ -615,7 +615,7 @@ class ALPACAKernel(Kernel):
                 'name': 'stdout',
                 'data': ('Plotting {n} '
                         'data points'). \
-                        format(n=len(data.shape[1]))})
+                        format(n=data.shape[1])})
 
         # We prepare the response with our rich
         # data (the plot).
