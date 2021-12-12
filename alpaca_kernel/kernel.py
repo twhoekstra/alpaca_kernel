@@ -175,7 +175,7 @@ class ALPACAKernel(Kernel):
         self.srescapturedlinecount = 0
         self.srescapturedlasttime = 0       # to control the frequency of capturing reported
 
-        self.sresplotmode = 0 # 0 plottinf off, 1 plotting on 
+        self.sresplotmode = 1 # 0 plottinf off, 1 plotting on 
         
         
     def interpretpercentline(self, percentline, cellcontents):
