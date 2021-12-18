@@ -417,6 +417,7 @@ class ALPACAKernel(Kernel):
                 self.sresplotmode = 2 # Do thonny-esque (live) plotting
             else:
                 self.sresplotmode = 0
+            logging.debug(f"Plot mode just efter percentcommand: {self.sresplotmode}")
             return cellcontents
 
         if percentcommand == ap_capture.prog:
@@ -664,6 +665,7 @@ class ALPACAKernel(Kernel):
         self.send_response(self.iopub_socket, 'stream', stream_content)
 
     def sresPLOT(self, output: str, asciigraphicscode=None, n04count=0, clear_output=False):
+        logging.debug(f"Plot mode just at at the start of sresPLOT: {self.sresplotmode}")
         if self.silent:
             return
 
@@ -715,6 +717,7 @@ class ALPACAKernel(Kernel):
                     kwargs[key] = value
             
             self.ax.plot(self.xx, self.yy, fmt, **kwargs)
+            logging.debug(f"Plot mode at the end of sresPLOT: {self.sresplotmode}")
 
         if self.sresplotmode == 2: # Thonny-eqsue plotting
             # format print("Random walk:", p1, " just random:", p2)
@@ -808,6 +811,7 @@ class ALPACAKernel(Kernel):
                 'display_data', content)
 
     def do_execute(self, code, silent, store_history=True, user_expressions=None, allow_stdin=False):
+        logging.debug(f"Plot mode just at the start of do_execture: {self.sresplotmode}")
         self.silent = silent
         if not code.strip():
             return {'status': 'ok', 'execution_count': self.execution_count, 'payload': [], 'user_expressions': {}}
@@ -861,7 +865,7 @@ class ALPACAKernel(Kernel):
         #    self.sres(self.asyncmodule.before + 'Restarting Bash')
         #    self.startasyncmodule()
         
-        logging.debug(self.sresplotmode)
+        logging.debug(f"Plot mode just before sendPLOT: {self.sresplotmode}")
         if self.sresplotmode == 1: # matplotlib-eqsue plotting (after finishing cell)
             self.sendPLOT()
         self.sresPLOTkiller()
