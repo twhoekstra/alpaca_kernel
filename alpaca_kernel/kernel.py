@@ -1,15 +1,23 @@
-from ipykernel.kernelbase import Kernel
+import ast
+import base64
+import logging
+import os
+import re
+import select
+import socket
+import sys
+import time
+import urllib
+from io import BytesIO
+
 import IPython
 import matplotlib.pyplot as plt
-import urllib, base64
-from io import BytesIO
 import numpy as np
-import ast
-import time
-
-import logging, sys, time, os, re
-import serial, socket, serial.tools.list_ports, select
+import serial
+import serial.tools.list_ports
 import websocket  # only for WebSocketConnectionClosedException
+from ipykernel.kernelbase import Kernel
+
 from . import deviceconnector
 
 logger = logging.getLogger(__name__)
@@ -19,7 +27,8 @@ serialtimeout = 0.5
 serialtimeoutcount = 10
 
 # use of argparse for handling the %commands in the cells
-import argparse, shlex
+import argparse
+import shlex
 
 ap_plot = argparse.ArgumentParser(prog="%plot", add_help=False)
 ap_plot.add_argument('--mode', choices=['matplotlib', 'thonny'], default = 'matplotlib')
@@ -670,13 +679,13 @@ class ALPACAKernel(Kernel):
                 settings = ast.literal_eval(settings)
 
                 ii = data.rfind('], [')
-                xx, yy = (data[1: ii+1], data[ii+3:-1])
+                self.xx, self.yy = (data[1: ii+1], data[ii+3:-1])
 
-                for axis_num, axis in enumerate((xx, yy)):
+                for axis_num, axis in enumerate((self.xx, self.yy)):
                     if not string_is_array(axis): 
                         raise SyntaxError(f"Expected {'X' if not axis_num else 'Y'} axis to be formatted as a dictionary")
 
-                xx, yy = (string_to_numpy(xx), string_to_numpy(yy))
+                xx, yy = (string_to_numpy(self.xx), string_to_numpy(self.yy))
             except AttributeError:
                 pass
                 #raise TypeError("Expected input to plotter to be a string") 
@@ -698,7 +707,7 @@ class ALPACAKernel(Kernel):
                 if key in SELECTED_KEYS:
                     kwargs[key] = value
             
-            self.ax.plot(xx, yy, fmt, **kwargs)
+            self.ax.plot(self.xx, self.yy, fmt, **kwargs)
 
         if self.sresplotmode == 2: # Thonny-eqsue plotting
             # format print("Random walk:", p1, " just random:", p2)
@@ -762,7 +771,7 @@ class ALPACAKernel(Kernel):
                 'name': 'stdout',
                 'data': ('Plotting {n} '
                         'data points'). \
-                        format(n=xx.size)})
+                        format(n=self.xx.size)})
 
         # We prepare the response with our rich
         # data (the plot).
