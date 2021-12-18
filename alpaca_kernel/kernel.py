@@ -857,7 +857,8 @@ class ALPACAKernel(Kernel):
         #except pexpect.EOF:
         #    self.sres(self.asyncmodule.before + 'Restarting Bash')
         #    self.startasyncmodule()
-
+        
+        raise RuntimeError(f"Error. Sresplotmode is {self.sresplotmode}")
         if self.sresplotmode == 1: # matplotlib-eqsue plotting (after finishing cell)
             
             self.sendPLOT()
