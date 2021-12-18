@@ -1,5 +1,5 @@
 import logging
-logging.basicConfig(filename="C:\Users\twh\Desktop\kernel.log")
+logging.basicConfig(filename="C:/Users/twh/Desktop/kernel.log")
 
 import ast
 import base64
