@@ -686,6 +686,7 @@ class ALPACAKernel(Kernel):
                         raise SyntaxError(f"Expected {'X' if not axis_num else 'Y'} axis to be formatted as a dictionary")
 
                 xx, yy = (string_to_numpy(self.xx), string_to_numpy(self.yy))
+
             except AttributeError:
                 pass
                 #raise TypeError("Expected input to plotter to be a string") 
@@ -695,6 +696,7 @@ class ALPACAKernel(Kernel):
             finally:
                 # If unplottable, just print
                 self.sres(output)
+                self.sresplotmode = 0
             
             # the data is good and plotting can commence
             if not self.sresstartedplot:
