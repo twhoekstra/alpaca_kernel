@@ -693,7 +693,10 @@ class ALPACAKernel(Kernel):
 
             # default value for [fmt]
             fmt = settings.pop('fmt', '')
-            kwargs = {key : settings[key] for key in SELECTED_KEYS}
+            kwargs = {}
+            for key, value in settings.items():
+                if key in SELECTED_KEYS:
+                    kwargs[key] = value
             
             self.ax.plot(xx, yy, fmt, **kwargs)
 
