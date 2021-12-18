@@ -712,7 +712,6 @@ class ALPACAKernel(Kernel):
                     kwargs[key] = value
             
             self.ax.plot(self.xx, self.yy, fmt, **kwargs)
-            raise RuntimeError("Test")
 
         if self.sresplotmode == 2: # Thonny-eqsue plotting
             # format print("Random walk:", p1, " just random:", p2)
@@ -859,6 +858,12 @@ class ALPACAKernel(Kernel):
         #    self.sres(self.asyncmodule.before + 'Restarting Bash')
         #    self.startasyncmodule()
 
+        if self.sresplotmode == 1: # matplotlib-eqsue plotting (after finishing cell)
+            
+            self.sendPLOT()
+            raise RuntimeError("Test 2")
+        self.sresPLOTkiller()
+
         if self.srescapturedoutputfile:
             if self.srescapturemode == 2:
                 self.send_response(self.iopub_socket, 'clear_output', {"wait":True})
@@ -871,9 +876,7 @@ class ALPACAKernel(Kernel):
             self.srescapturedoutputfile = None
             self.srescapturemode = 0
         
-        if self.sresplotmode == 1: # matplotlib-eqsue plotting (after finishing cell)
-            self.sendPLOT()
-        self.sresPLOTkiller()
+       
 
         if interrupted:
             self.sresSYS("\n\n*** Sending Ctrl-C\n\n")
