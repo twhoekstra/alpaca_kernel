@@ -666,6 +666,7 @@ class ALPACAKernel(Kernel):
 
         if self.sresplotmode == 0: # This should never happen
             self.sres(output)
+            raise RuntimeError("Tried to plot but the global plotting mode was set to 0")
             return
 
         if self.sresplotmode == 1: # matplotlib-esque (array) plotting
@@ -711,6 +712,7 @@ class ALPACAKernel(Kernel):
                     kwargs[key] = value
             
             self.ax.plot(self.xx, self.yy, fmt, **kwargs)
+            raise RuntimeError("Test")
 
         if self.sresplotmode == 2: # Thonny-eqsue plotting
             # format print("Random walk:", p1, " just random:", p2)
@@ -736,7 +738,7 @@ class ALPACAKernel(Kernel):
                 self.ax.legend()
                 self.ax.grid()
                 self.ax.set_xlabel("Time [s]")
-                self.line = self.ax.plot(xx, yy)
+                self.line = self.ax.plot(self.xx, self.yy)
 
             if len(data) != self.number_lines: # Changing the plot when the number of items changes
                 self.number_lines = len(data)
@@ -747,7 +749,7 @@ class ALPACAKernel(Kernel):
             self.xx = np.append(self.xx, time.time()-self.sresstartedplottime)
 
             self.ax.cla() # Clear
-            self.ax.plot(xx, yy) # Plot
+            self.ax.plot(self.xx, self.yy) # Plot
 
             self.sendPLOT() # Display
         
