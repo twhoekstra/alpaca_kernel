@@ -697,13 +697,18 @@ class ALPACAKernel(Kernel):
                 self.yy = np.squeeze(self.yy)
 
             except AttributeError:
+                
+                self.sres(output)
+                self.sresplotmode = 0
                 raise #TypeError("Expected input to plotter to be a string") 
+                # If unplottable, just print
             except SyntaxError:
-                raise
-            finally:
+                
                 # If unplottable, just print
                 self.sres(output)
                 self.sresplotmode = 0
+                raise
+                
             
             # the data is good and plotting can commence
             if not self.sresstartedplot:
