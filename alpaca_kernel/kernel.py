@@ -685,16 +685,17 @@ class ALPACAKernel(Kernel):
                     if not string_is_array(axis): 
                         raise SyntaxError(f"Expected {'X' if not axis_num else 'Y'} axis to be formatted as a dictionary")
 
-                self.xx, self.yy = (string_to_numpy(self.xx), string_to_numpy(self.yy))
+                self.xx = string_to_numpy(self.xx)
+                self.yy = string_to_numpy(self.yy)
+                self.xx = np.squeeze(self.xx)
+                self.yy = np.squeeze(self.yy)
 
             except AttributeError:
                 print(self.xx, self.yy)
-                pass
-                #raise TypeError("Expected input to plotter to be a string") 
+                raise #TypeError("Expected input to plotter to be a string") 
             except SyntaxError:
                 print(self.xx, self.yy)
-                pass
-                #raise
+                raise
             finally:
                 # If unplottable, just print
                 self.sres(output)
