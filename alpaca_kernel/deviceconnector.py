@@ -265,7 +265,7 @@ class DeviceConnector:
         for line in process.stderr:
             self.sres(line.decode(), n04count=1)
 
-    def receivestream(self, bseekokay, isplotting = False, bwarnokaypriors=True, b5secondtimeout=False, bfetchfilecapture_nchunks=0):
+    def receivestream(self, bseekokay, isplotting = 0, bwarnokaypriors=True, b5secondtimeout=False, bfetchfilecapture_nchunks=0):
         n04count = 0
         brebootdetected = False
         res = [ ]

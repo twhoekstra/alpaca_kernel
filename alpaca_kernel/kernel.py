@@ -4,6 +4,8 @@ import matplotlib.pyplot as plt
 import urllib, base64
 from io import BytesIO
 import numpy as np
+import ast
+import time
 
 import logging, sys, time, os, re
 import serial, socket, serial.tools.list_ports, select
@@ -20,6 +22,7 @@ serialtimeoutcount = 10
 import argparse, shlex
 
 ap_plot = argparse.ArgumentParser(prog="%plot", add_help=False)
+ap_plot.add_argument('--mode', choices=['matplotlib', 'thonny'], default = 'matplotlib')
 
 ap_serialconnect = argparse.ArgumentParser(prog="%serialconnect", add_help=False)
 ap_serialconnect.add_argument('--raw', help='Just open connection', action='store_true')
@@ -126,6 +129,58 @@ def string_to_numpy(string):
         line_Items.append(np.fromstring(line, dtype=float, sep=','))
     return np.array(line_Items)
 
+def string_is_array(string):
+    if string.count('[') != string.count(']'):
+        return False
+    if sum(cc.isalpha() for cc in string) > 0: # cant contain alphanumerics
+        return False
+    
+    number_of_numbers = 0
+    number_flag = False
+    for cc in string:
+        if cc.isnumeric() and not number_flag: # recognize start of number
+            number_flag = True
+        if number_flag and cc in [']',',']: # recognize end of number
+            number_flag = False
+            number_of_numbers += 1
+    
+    if number_of_numbers != string.count(',') + 1:
+        return False
+    
+    return True
+
+def unpack_Thonny_string(output):
+    ii_label_start = 0
+    ii_number_start = 0
+    ii_number_end = 0
+    points = {}
+
+    number_flag = False
+    for ii, cc in enumerate(output):
+        # Previous end is new start
+        if cc.isnumeric() and not number_flag: # recognize start of number
+                number_flag = True
+                ii_number_start = ii
+                
+        at_end = ii == len(output)-1
+        if number_flag and (cc in [' '] or at_end): # recognize end of number
+            ii_number_end = ii
+            
+            if at_end:
+                ii_number_end = ii+1
+        
+            print(ii_label_start, ii_number_start, ii_number_end)
+            label = output[ii_label_start:ii_number_start].split(':')[0]
+            number = output[ii_number_start:ii_number_end]
+            points[label] = float(number)
+            
+            # Prep for new loop
+            number_flag = False 
+            ii_label_start = ii_number_end + 1
+
+    return points
+    
+
 # Complete streaming of data to file with a quiet mode (listing number of lines)
 # Set this up for pulse reading and plotting in a second jupyter page
 
@@ -176,7 +231,8 @@ class ALPACAKernel(Kernel):
         self.srescapturedlasttime = 0       # to control the frequency of capturing reported
 
         self.sresplotmode = 0 # 0 plottinf off, 1 plotting on 
-        
+        self.sresstartedplot = 0 # 
+        self.sresThonnyiteration = 0 
         
     def interpretpercentline(self, percentline, cellcontents):
         try:
@@ -342,7 +398,13 @@ class ALPACAKernel(Kernel):
 
             
         if percentcommand == ap_plot.prog:
-            self.sresplotmode = 1
+            apargs = parseap(ap_plot, percentstringargs[1:])
+            if apargs.mode == 'matplotlib':
+                self.sresplotmode = 1 # Do matplotlib-esque (array) plotting
+            elif apargs.mode == 'thonny':
+                self.sresplotmode = 2 # Do thonny-esque (live) plotting
+            else:
+                self.sresplotmode = 0
             return cellcontents
 
         if percentcommand == ap_capture.prog:
@@ -589,23 +651,105 @@ class ALPACAKernel(Kernel):
         stream_content = {'name': ("stdout" if n04count == 0 else "stderr"), 'text': output }
         self.send_response(self.iopub_socket, 'stream', stream_content)
 
-    def sresPLOT(self, output, asciigraphicscode=None, n04count=0, clear_output=False):
+    def sresPLOT(self, output: str, asciigraphicscode=None, n04count=0, clear_output=False):
         if self.silent:
             return
 
-        assert type(output) is str, "Output sent to plot_sres is not str"
-        data = string_to_numpy(output)
+        if self.sresplotmode == 0: # This should never happen
+            self.sres(output)
+            return
 
-        assert len(data) == 2, "Array to be plotted should be 2D with two rows"
+        if self.sresplotmode == 1: # matplotlib-esque (array) plotting
+            # Format for string is {dictionary of settings}[[x axis], [y axis]]
+            SELECTED_KEYS = ['color','linestyle','linewidth', 'marker', 'label']
+            
+            try:
+                settings, data = output.split('}')
+                settings += '}'
+
+                settings = ast.literal_eval(settings)
+
+                ii = data.rfind('], [')
+                xx, yy = (data[1: ii+1], data[ii+3:-1])
+
+                for axis_num, axis in enumerate((xx, yy)):
+                    if not string_is_array(axis): 
+                        raise SyntaxError(f"Expected {'X' if not axis_num else 'Y'} axis to be formatted as a dictionary")
+
+                xx, yy = (string_to_numpy(xx), string_to_numpy(yy))
+            except AttributeError:
+                pass
+                #raise TypeError("Expected input to plotter to be a string") 
+            except SyntaxError:
+                pass
+                #raise
+            finally:
+                # If unplottable, just print
+                self.sres(output)
+            
+            # the data is good and plotting can commence
+            if not self.sresstartedplot:
+                self.sresPLOTcreator()
+
+            # default value for [fmt]
+            fmt = settings.pop('fmt', '')
+            kwargs = {key : settings[key] for key in SELECTED_KEYS}
+            
+            self.ax.plot(xx, yy, fmt, **kwargs)
+
+        if self.sresplotmode == 2: # Thonny-eqsue plotting
+            # format print("Random walk:", p1, " just random:", p2)
+            try:
+                
+                if sum(cc.isnumeric() for cc in output) == 0: # Plain text print statement
+                    self.sres(output)
+                    return
+                
+                data = unpack_Thonny_string(output)
+
+            except ValueError:
+                pass
+            finally:
+                self.sres(output)
+
+            if not self.sresstartedplot: # Instantiation
+                self.sresPLOTcreator()
+                self.sresstartedplottime = time.time()
+                self.number_lines = len(data)
+                self.yy = np.zeros((self.number_lines, 0))
+                self.xx = np.zeros(0)
+                self.ax.legend()
+                self.ax.grid()
+                self.ax.set_xlabel("Time [s]")
+                self.line = self.ax.plot(xx, yy)
+
+            if len(data) != self.number_lines: # Changing the plot when the number of items changes
+                self.number_lines = len(data)
+                self.yy = np.zeros((self.number_lines, 0))
+                self.xx = np.zeros(0)
+
+            self.yy = np.append(self.yy, [list(data.values())], axis = 0)
+            self.xx = np.append(self.xx, time.time()-self.sresstartedplottime)
+
+            self.ax.cla() # Clear
+            self.ax.plot(xx, yy) # Plot
+
+            self.sendPLOT() # Display
         
+    def sresPLOTcreator(self):
         # We create the plot with matplotlib.
-        fig, ax = plt.subplots(1, 1, figsize=(6,4),
-                            dpi=100)
-        
-        ax.plot(data[0,:], data[0,:])
+        self.fig, self.ax = plt.subplots(1, 1, figsize=(6,4), dpi=100)
+        self.sresstartedplot = True
 
+    def sresPLOTkiller(self):
+        self.sresplotmode = 0 # Reset plot
+        self.sresstartedplot = False
+        self.fig, self.ax = (None, None)
+        self.sresThonnyiteration = 0
+    
+    def sendPLOT(self):
         # We create a PNG out of this plot.
-        png = _to_png(fig)
+        png = _to_png(self.fig)
 
         # We send the standard output to the
         # client.
@@ -615,7 +759,7 @@ class ALPACAKernel(Kernel):
                 'name': 'stdout',
                 'data': ('Plotting {n} '
                         'data points'). \
-                        format(n=data.shape[1])})
+                        format(n=xx.size)})
 
         # We prepare the response with our rich
         # data (the plot).
@@ -643,8 +787,6 @@ class ALPACAKernel(Kernel):
         # the contents.
         self.send_response(self.iopub_socket,
                 'display_data', content)
-
-        
 
     def do_execute(self, code, silent, store_history=True, user_expressions=None, allow_stdin=False):
         self.silent = silent
@@ -712,7 +854,9 @@ class ALPACAKernel(Kernel):
             self.srescapturedoutputfile = None
             self.srescapturemode = 0
         
-        self.sresplotmode = 0 # Reset plot
+        if self.sresplotmode == 1: # matplotlib-eqsue plotting (after finishing cell)
+            self.sendPLOT()
+        self.sresPLOTkiller()
 
         if interrupted:
             self.sresSYS("\n\n*** Sending Ctrl-C\n\n")
