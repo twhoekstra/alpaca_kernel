@@ -1,3 +1,6 @@
+import logging
+logging.basicConfig(filename="C:\Users\twh\Desktop\kernel.log")
+
 import ast
 import base64
 import logging
@@ -758,7 +761,7 @@ class ALPACAKernel(Kernel):
         self.sresstartedplot = True
 
     def sresPLOTkiller(self):
-        self.sresplotmode = 0 # Reset plot
+        #self.sresplotmode = 0 # Reset plot
         self.sresstartedplot = False
         self.fig, self.ax = (None, None)
         self.sresThonnyiteration = 0
@@ -858,11 +861,9 @@ class ALPACAKernel(Kernel):
         #    self.sres(self.asyncmodule.before + 'Restarting Bash')
         #    self.startasyncmodule()
         
-        raise RuntimeError(f"Error. Sresplotmode is {self.sresplotmode}")
+        logging.debug(self.sresplotmode)
         if self.sresplotmode == 1: # matplotlib-eqsue plotting (after finishing cell)
-            
             self.sendPLOT()
-            raise RuntimeError(f"Error. Sresplotmode is {self.sresplotmode}")
         self.sresPLOTkiller()
 
         if self.srescapturedoutputfile:
