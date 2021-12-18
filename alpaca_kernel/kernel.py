@@ -861,7 +861,7 @@ class ALPACAKernel(Kernel):
         if self.sresplotmode == 1: # matplotlib-eqsue plotting (after finishing cell)
             
             self.sendPLOT()
-            raise RuntimeError("Test 2")
+            raise RuntimeError(f"Error. Sresplotmode is {self.sresplotmode}")
         self.sresPLOTkiller()
 
         if self.srescapturedoutputfile:
@@ -876,7 +876,6 @@ class ALPACAKernel(Kernel):
             self.srescapturedoutputfile = None
             self.srescapturemode = 0
         
-       
 
         if interrupted:
             self.sresSYS("\n\n*** Sending Ctrl-C\n\n")
