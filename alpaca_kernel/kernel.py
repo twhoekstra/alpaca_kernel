@@ -771,8 +771,9 @@ class ALPACAKernel(Kernel):
             self.xx = np.append(self.xx, time.time()-self.sresstartedplottime)
 
             #self.ax.cla() # Clear
-            self.lines.set_xdata(self.xx)
-            self.lines.set_ydata(self.yy)
+            for ii, line in enumerate(self.lines):
+                line.set_xdata(self.xx[:,ii])
+                line.set_ydata(self.yy)
 
             self.ax.autoscale()
             #self.ax.set_ylim(np.minimum(self.yy)*1.1, np.maximum(self.yy))
