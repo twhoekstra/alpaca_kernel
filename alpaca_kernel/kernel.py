@@ -773,7 +773,7 @@ class ALPACAKernel(Kernel):
             self.ax.cla() # Clear
             self.ax.plot(self.xx, self.yy) # Plot
 
-            self.sendPLOT() # Display
+            self.sendPLOT(update = not self.sresThonnyiteration) # Display
             self.sresThonnyiteration += 1
             return
         
@@ -793,7 +793,7 @@ class ALPACAKernel(Kernel):
         self.fig, self.ax = (None, None)
         self.sresThonnyiteration = 0
     
-    def sendPLOT(self):
+    def sendPLOT(self, update = False):
         # We create a PNG out of this plot.
         png = _to_png(self.fig)
 
@@ -835,8 +835,12 @@ class ALPACAKernel(Kernel):
 
         # We send the display_data message with
         # the contents.
-        self.send_response(self.iopub_socket,
-                'display_data', content)
+        if update:
+            self.send_response(self.iopub_socket,
+                'update_display_data', content)
+        else:
+            self.send_response(self.iopub_socket,
+                    'display_data', content)
 
     def do_execute(self, code, silent, store_history=True, user_expressions=None, allow_stdin=False):
         self.silent = silent
