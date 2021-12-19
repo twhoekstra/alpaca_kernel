@@ -752,27 +752,30 @@ class ALPACAKernel(Kernel):
                 return
             
             # the data is good and plotting can commence
-            if not self.sresstartedplot: # Instantiation
-                self.sresPLOTcreator()
-                self.sresstartedplottime = time.time()
+            if not self.sresstartedplot or len(data) != self.number_lines: # (re)Instantiation
+                if not self.sresstartedplot:
+                    self.sresPLOTcreator()
+                    self.sresstartedplottime = time.time()
                 self.number_lines = len(data)
                 self.yy = np.zeros((0, self.number_lines))
                 self.xx = np.zeros(0)
-                self.line = self.ax.plot(self.xx, self.yy)
+                self.lines = self.ax.plot(self.xx, self.yy)
+                self.lines.set_label(list(data.keys()))
                 self.ax.legend()
                 self.ax.grid()
                 self.ax.set_xlabel("Time [s]")
 
-            if len(data) != self.number_lines: # Changing the plot when the number of items changes
-                self.number_lines = len(data)
-                self.yy = np.zeros((self.number_lines, 0))
-                self.xx = np.zeros(0)
-
             self.yy = np.append(self.yy, [list(data.values())], axis = 0)
             self.xx = np.append(self.xx, time.time()-self.sresstartedplottime)
 
-            self.ax.cla() # Clear
-            self.ax.plot(self.xx, self.yy, label = list(data.keys())) # Plot
+            #self.ax.cla() # Clear
+            self.lines.set_xdata(self.xx)
+            self.lines.set_ydata(self.yy)
+
+            self.ax.autoscale()
+            #self.ax.set_ylim(np.minimum(self.yy)*1.1, np.maximum(self.yy))
+            #self.ax.set_xlim(np.minimum(self.xx), np.maximum(self.xx))
+            #self.ax.plot(self.xx, self.yy, label =  # Plot
 
             if self.sresThonnyiteration:
                 self.sendPLOT(update_id = self.plot_uuid) # Use old plot and display
