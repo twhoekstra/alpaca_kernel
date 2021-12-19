@@ -776,8 +776,8 @@ class ALPACAKernel(Kernel):
                 line.set_ydata(self.yy[:,ii])
 
             #self.ax.autoscale()
-            self.ax.set_ylim(np.minimum(self.yy)*1.1, np.maximum(self.yy)*1.1)
-            self.ax.set_xlim(np.minimum(self.xx)*1.1, np.maximum(self.xx)*1.1)
+            self.ax.set_ylim(np.amin(self.yy)*1.1, np.amax(self.yy)*1.1)
+            self.ax.set_xlim(np.amin(self.xx)*1.1, np.amax(self.xx)*1.1)
             #self.ax.plot(self.xx, self.yy, label =  # Plot
 
             if self.sresThonnyiteration:
