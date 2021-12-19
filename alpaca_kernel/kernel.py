@@ -773,7 +773,7 @@ class ALPACAKernel(Kernel):
             self.ax.cla() # Clear
             self.ax.plot(self.xx, self.yy) # Plot
 
-            self.sendPLOT(update = not self.sresThonnyiteration) # Display
+            self.sendPLOT(update = self.sresThonnyiteration) # Display
             self.sresThonnyiteration += 1
             return
         
