@@ -761,7 +761,7 @@ class ALPACAKernel(Kernel):
                 self.xx = np.zeros(0)
                 self.lines = self.ax.plot(self.xx, self.yy)
                 for ii, line in enumerate(self.lines):
-                    self.lines.set_label(list(data.keys())[ii])
+                    line.set_label(list(data.keys())[ii])
 
                 self.ax.legend()
                 self.ax.grid()
