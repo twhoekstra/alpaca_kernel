@@ -758,10 +758,10 @@ class ALPACAKernel(Kernel):
                 self.number_lines = len(data)
                 self.yy = np.zeros((0, self.number_lines))
                 self.xx = np.zeros(0)
+                self.line = self.ax.plot(self.xx, self.yy)
                 self.ax.legend()
                 self.ax.grid()
                 self.ax.set_xlabel("Time [s]")
-                self.line = self.ax.plot(self.xx, self.yy)
 
             if len(data) != self.number_lines: # Changing the plot when the number of items changes
                 self.number_lines = len(data)
@@ -772,7 +772,7 @@ class ALPACAKernel(Kernel):
             self.xx = np.append(self.xx, time.time()-self.sresstartedplottime)
 
             self.ax.cla() # Clear
-            self.ax.plot(self.xx, self.yy) # Plot
+            self.ax.plot(self.xx, self.yy, label = list(data.keys())) # Plot
 
             if self.sresThonnyiteration:
                 self.sendPLOT(update_id = self.plot_uuid) # Use old plot and display
