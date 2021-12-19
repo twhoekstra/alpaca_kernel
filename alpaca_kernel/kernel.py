@@ -760,7 +760,9 @@ class ALPACAKernel(Kernel):
                 self.yy = np.zeros((0, self.number_lines))
                 self.xx = np.zeros(0)
                 self.lines = self.ax.plot(self.xx, self.yy)
-                self.lines.set_label(list(data.keys()))
+                for ii, line in enumerate(self.lines):
+                    self.lines.set_label(list(data.keys())[ii])
+
                 self.ax.legend()
                 self.ax.grid()
                 self.ax.set_xlabel("Time [s]")
