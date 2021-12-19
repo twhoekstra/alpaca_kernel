@@ -5,7 +5,7 @@ with open("README.md", "r", encoding="utf-8") as fh:
 
 setuptools.setup(
     name='alpaca_kernel',
-    version='0.0.40',
+    version='0.0.41',
     author='Thijn Hoekstra',
     author_email='t.w.hoekstra@student.tudelft.nl',
     description='Fork of jupyter_micropython_kernel  by goatchurchprime',
