@@ -1,6 +1,3 @@
-import logging
-logging.basicConfig(filename="C:/Users/twh/Desktop/kernel.log")
-
 import ast
 import base64
 import logging
@@ -183,6 +180,7 @@ def unpack_Thonny_string(output):
         
             print(ii_label_start, ii_number_start, ii_number_end)
             label = output[ii_label_start:ii_number_start].split(':')[0]
+            label = label.rstrip()
             number = output[ii_number_start:ii_number_end]
             points[label] = float(number)
             
@@ -417,7 +415,6 @@ class ALPACAKernel(Kernel):
                 self.sresplotmode = 2 # Do thonny-esque (live) plotting
             else:
                 self.sresplotmode = 0
-            logging.debug(f"Plot mode just efter percentcommand: {self.sresplotmode}")
             return cellcontents
 
         if percentcommand == ap_capture.prog:
@@ -665,7 +662,6 @@ class ALPACAKernel(Kernel):
         self.send_response(self.iopub_socket, 'stream', stream_content)
 
     def sresPLOT(self, output: str, asciigraphicscode=None, n04count=0, clear_output=False):
-        logging.debug(f"Plot mode just at at the start of sresPLOT: {self.sresplotmode}")
         if self.silent:
             return
 
@@ -676,8 +672,32 @@ class ALPACAKernel(Kernel):
 
         if self.sresplotmode == 1: # matplotlib-esque (array) plotting
             # Format for string is {dictionary of settings}[[x axis], [y axis]]
-            SELECTED_KEYS = ['color','linestyle','linewidth', 'marker', 'label']
-            
+            VALID_KEYS = ['color','linestyle','linewidth', 'marker', 'label']
+            # Format for attribute is ATTRIBUTE_PREFIXattribute(parameters)
+            VALID_ATTRIBUTES = {'legend' : 'legend', 
+                                'grid' : 'grid',
+                                'xlabel' : 'set_xlabel',
+                                'ylabel' : 'set_ylabel',
+                                'title' : 'set_title'} # Key: accepted input, Value: function to run as ouput
+            ATTRIBUTE_PREFIX = '%matplotlib --' # Prefix to recognize attribute
+
+            if output != None and ATTRIBUTE_PREFIX in output:
+                if self.ax != None: # If plot was made
+                    if '(' not in output or ')' not in output:
+                        return
+                    output = output.replace(ATTRIBUTE_PREFIX,'')
+                    ii = output.find('(')
+                    attribute = output[:ii]
+                    parameters = output[ii+1:output.find(')')]
+                    if parameters == '':
+                        getattr(self.ax, VALID_ATTRIBUTES[attribute])() # Run command
+                    else:
+                        getattr(self.ax, VALID_ATTRIBUTES[attribute])(parameters) # Run command
+                else:
+                    return
+            else:
+                pass
+
             try:
                 settings, data = output.split('}')
                 settings += '}'
@@ -718,11 +738,11 @@ class ALPACAKernel(Kernel):
             fmt = settings.pop('fmt', '')
             kwargs = {}
             for key, value in settings.items():
-                if key in SELECTED_KEYS:
+                if key in VALID_KEYS:
                     kwargs[key] = value
             
             self.ax.plot(self.xx, self.yy, fmt, **kwargs)
-            logging.debug(f"Plot mode at the end of sresPLOT: {self.sresplotmode}")
+            return
 
         if self.sresplotmode == 2: # Thonny-eqsue plotting
             # format print("Random walk:", p1, " just random:", p2)
@@ -733,12 +753,11 @@ class ALPACAKernel(Kernel):
                     return
                 
                 data = unpack_Thonny_string(output)
-
             except ValueError:
-                pass
-            finally:
                 self.sres(output)
+                return
 
+            # the data is good and plotting can commence
             if not self.sresstartedplot: # Instantiation
                 self.sresPLOTcreator()
                 self.sresstartedplottime = time.time()
@@ -762,6 +781,8 @@ class ALPACAKernel(Kernel):
             self.ax.plot(self.xx, self.yy) # Plot
 
             self.sendPLOT() # Display
+            self.sresThonnyiteration += 1
+            return
         
     def sresPLOTcreator(self):
         # We create the plot with matplotlib.
@@ -816,7 +837,6 @@ class ALPACAKernel(Kernel):
                 'display_data', content)
 
     def do_execute(self, code, silent, store_history=True, user_expressions=None, allow_stdin=False):
-        logging.debug(f"Plot mode just at the start of do_execture: {self.sresplotmode}")
         self.silent = silent
         if not code.strip():
             return {'status': 'ok', 'execution_count': self.execution_count, 'payload': [], 'user_expressions': {}}
@@ -870,7 +890,6 @@ class ALPACAKernel(Kernel):
         #    self.sres(self.asyncmodule.before + 'Restarting Bash')
         #    self.startasyncmodule()
         
-        logging.debug(f"Plot mode just before sendPLOT: {self.sresplotmode}")
         if self.sresplotmode == 1: # matplotlib-eqsue plotting (after finishing cell)
             self.sendPLOT()
         self.sresPLOTkiller()
