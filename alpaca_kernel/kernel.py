@@ -167,7 +167,7 @@ def unpack_Thonny_string(output):
     number_flag = False
     for ii, cc in enumerate(output):
         # Previous end is new start
-        if cc.isnumeric() and not number_flag: # recognize start of number
+        if cc.isnumeric() and output[ii-1] == ' ' and not number_flag: # recognize start of number
                 number_flag = True
                 ii_number_start = ii
                 
@@ -838,9 +838,11 @@ class ALPACAKernel(Kernel):
         if update:
             self.send_response(self.iopub_socket,
                 'update_display_data', content)
+            logging.debug(f'Updated display data')
         else:
             self.send_response(self.iopub_socket,
                     'display_data', content)
+            logging.debug(f'Created new display data')
 
     def do_execute(self, code, silent, store_history=True, user_expressions=None, allow_stdin=False):
         self.silent = silent
