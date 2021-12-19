@@ -772,8 +772,8 @@ class ALPACAKernel(Kernel):
 
             #self.ax.cla() # Clear
             for ii, line in enumerate(self.lines):
-                line.set_xdata(self.xx[:,ii])
-                line.set_ydata(self.yy)
+                line.set_xdata(self.xx)
+                line.set_ydata(self.yy[:,ii])
 
             self.ax.autoscale()
             #self.ax.set_ylim(np.minimum(self.yy)*1.1, np.maximum(self.yy))
