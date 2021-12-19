@@ -8,6 +8,7 @@ import socket
 import sys
 import time
 import urllib
+import uuid
 from io import BytesIO
 
 import IPython
@@ -773,7 +774,11 @@ class ALPACAKernel(Kernel):
             self.ax.cla() # Clear
             self.ax.plot(self.xx, self.yy) # Plot
 
-            self.sendPLOT(update = self.sresThonnyiteration) # Display
+            if self.sresThonnyiteration:
+                self.sendPLOT(update_id = self.plot_uuid) # Use old plot and display
+            else:
+                self.plot_uuid = self.sendPLOT() # Create new plot and store UUID
+
             self.sresThonnyiteration += 1
             return
         
@@ -793,9 +798,16 @@ class ALPACAKernel(Kernel):
         self.fig, self.ax = (None, None)
         self.sresThonnyiteration = 0
     
-    def sendPLOT(self, update = False):
+    def sendPLOT(self, update_id = None):
         # We create a PNG out of this plot.
         png = _to_png(self.fig)
+
+        if update_id == None:
+            plot_uuid = uuid.uuid1()  # When creating a new plot
+            update = False
+        else:
+            plot_uuid = update_id
+            update = True
 
         # We send the standard output to the
         # client.
@@ -829,7 +841,7 @@ class ALPACAKernel(Kernel):
                 },
             
             'transient' : {
-                'display_id' : 'plot_display'
+                'display_id' : str(plot_uuid)
             }
         }
 
@@ -839,9 +851,10 @@ class ALPACAKernel(Kernel):
             self.send_response(self.iopub_socket,
                 'update_display_data', content)
             #logging.debug(f'Updated display data')
-        else:
+        else: # creating new plot
             self.send_response(self.iopub_socket,
                     'display_data', content)
+            return plot_uuid # Return new UUID for futre reference
             #logging.debug(f'Created new display data')
 
     def do_execute(self, code, silent, store_history=True, user_expressions=None, allow_stdin=False):
