@@ -718,20 +718,11 @@ class ALPACAKernel(Kernel):
                 self.xx = np.squeeze(self.xx)
                 self.yy = np.squeeze(self.yy)
 
-            except AttributeError:
+            except (AttributeError, SyntaxError, ValueError) as e:
+                self.sresPLOTgracefulexit(output)
+                return
+                #raise #TypeError("Expected input to plotter to be a string") 
                 
-                self.sres(output)
-                self.sresplotmode = 0
-                raise #TypeError("Expected input to plotter to be a string") 
-                # If unplottable, just print
-            except SyntaxError:
-                
-                # If unplottable, just print
-                self.sres(output)
-                self.sresplotmode = 0
-                raise
-                
-            
             # the data is good and plotting can commence
             if not self.sresstartedplot:
                 self.sresPLOTcreator()
@@ -758,13 +749,13 @@ class ALPACAKernel(Kernel):
             except ValueError:
                 self.sres(output)
                 return
-
+            
             # the data is good and plotting can commence
             if not self.sresstartedplot: # Instantiation
                 self.sresPLOTcreator()
                 self.sresstartedplottime = time.time()
                 self.number_lines = len(data)
-                self.yy = np.zeros((0, self.number_lines))
+                self.yy = np.zeros((0, ))
                 self.xx = np.zeros(0)
                 self.ax.legend()
                 self.ax.grid()
@@ -790,6 +781,11 @@ class ALPACAKernel(Kernel):
         # We create the plot with matplotlib.
         self.fig, self.ax = plt.subplots(1, 1, figsize=(6,4), dpi=100)
         self.sresstartedplot = True
+
+    def sresPLOTgracefulexit(self, output):
+        #If unplottable, just print
+        self.sres(output)
+        self.sresplotmode = 0
 
     def sresPLOTkiller(self):
         #self.sresplotmode = 0 # Reset plot
@@ -830,7 +826,11 @@ class ALPACAKernel(Kernel):
                     'width': 600,
                     'height': 400
                 }
-                }
+                },
+            
+            'transient' : {
+                'display_id' : 'plot_display'
+            }
         }
 
         # We send the display_data message with
