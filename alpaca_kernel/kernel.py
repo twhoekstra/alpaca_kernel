@@ -755,7 +755,7 @@ class ALPACAKernel(Kernel):
                 self.sresPLOTcreator()
                 self.sresstartedplottime = time.time()
                 self.number_lines = len(data)
-                self.yy = np.zeros((0, ))
+                self.yy = np.zeros((0, self.number_lines))
                 self.xx = np.zeros(0)
                 self.ax.legend()
                 self.ax.grid()
