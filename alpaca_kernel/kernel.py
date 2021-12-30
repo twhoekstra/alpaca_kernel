@@ -675,7 +675,7 @@ class ALPACAKernel(Kernel):
             # Format for string is {dictionary of settings}[[x axis], [y axis]]
             VALID_KEYS = ['color','linestyle','linewidth', 'marker', 'label']
             # Format for attribute is ATTRIBUTE_PREFIXattribute(parameters)
-            fig, ax = plt.subplots(1, 1, figsize=(6,4), dpi=100)
+            self.fig, self.ax = plt.subplots(1, 1, figsize=(6,4), dpi=100)
 
             VALID_ATTRIBUTES = {'legend' : 'legend',
                                 'hlines' : 'hlines',
@@ -695,7 +695,7 @@ class ALPACAKernel(Kernel):
 
                         if attribute in VALID_ATTRIBUTES:
                             args = output[ii+1:jj]
-                            
+
                             if args == '':
                                 getattr(ax, VALID_ATTRIBUTES[attribute])() # Run command
                             else:
@@ -706,17 +706,17 @@ class ALPACAKernel(Kernel):
                                         args[ii] = float(arg)
                                     else:
                                         args[ii] = arg.replace('"', '').replace('\'', '')
-                                
-                                if '{' in output: # read kwargs
+
+                                if '{' in output and '{}' not in output: # read kwargs
                                     kwargs = output[jj:output.find(')')]
                                     kwargs = ast.literal_eval(kwargs)
 
                                     try:
-                                        getattr(ax, VALID_ATTRIBUTES[attribute])(*args, **kwargs) # Run command
+                                        getattr(self.ax, VALID_ATTRIBUTES[attribute])(*args, **kwargs) # Run command
                                     except AttributeError:
-                                        getattr(ax, VALID_ATTRIBUTES[attribute])(*args)
+                                        getattr(self.ax, VALID_ATTRIBUTES[attribute])(*args)
                                 else: # no kwargs
-                                    getattr(ax, VALID_ATTRIBUTES[attribute])(*args)
+                                    getattr(self.ax, VALID_ATTRIBUTES[attribute])(*args)
 
                 else:
                     pass # Not an attribute
