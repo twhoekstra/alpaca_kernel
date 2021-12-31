@@ -666,9 +666,9 @@ class ALPACAKernel(Kernel):
         if self.silent:
             return
 
-        if self.sresplotmode == 0: # This should never happen
+        if self.sresplotmode == 0:
             self.sres(output)
-            raise RuntimeError("Tried to plot but the global plotting mode was set to 0")
+            #raise RuntimeError("Tried to plot but the global plotting mode was set to 0")
             return
 
         if self.sresplotmode == 1: # matplotlib-esque (array) plotting
