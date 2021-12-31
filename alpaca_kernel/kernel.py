@@ -761,7 +761,8 @@ class ALPACAKernel(Kernel):
             try:
                 self.ax.plot(self.xx, self.yy, fmt, **kwargs)
             except Exception:
-                traceback.print_exc()
+                tb = traceback.format_exc()
+                self.sres(tb)
             return
 
         if self.sresplotmode == 2: # Thonny-eqsue plotting
