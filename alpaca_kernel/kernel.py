@@ -666,6 +666,7 @@ class ALPACAKernel(Kernel):
         self.send_response(self.iopub_socket, 'stream', stream_content)
 
     def sresPLOT(self, output: str, asciigraphicscode=None, n04count=0, clear_output=False):
+        logging.debug(output)
         if self.silent:
             return
 
