@@ -6,6 +6,7 @@ import re
 import select
 import socket
 import sys
+import traceback
 import time
 import urllib
 import uuid
@@ -757,8 +758,10 @@ class ALPACAKernel(Kernel):
             for key, value in settings.items():
                 if key in VALID_KEYS:
                     kwargs[key] = value
-
-            self.ax.plot(self.xx, self.yy, fmt, **kwargs)
+            try:
+                self.ax.plot(self.xx, self.yy, fmt, **kwargs)
+            except Exception:
+                traceback.print_exc()
             return
 
         if self.sresplotmode == 2: # Thonny-eqsue plotting
