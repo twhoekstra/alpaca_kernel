@@ -33,7 +33,7 @@ import argparse
 import shlex
 
 ap_plot = argparse.ArgumentParser(prog="%plot", add_help=False)
-ap_plot.add_argument('--mode', choices=['matplotlib', 'thonny'], default = 'matplotlib')
+ap_plot.add_argument('--mode', choices=['matplotlib', 'thonny', 'None'], default = 'matplotlib')
 
 ap_serialconnect = argparse.ArgumentParser(prog="%serialconnect", add_help=False)
 ap_serialconnect.add_argument('--raw', help='Just open connection', action='store_true')
@@ -415,6 +415,8 @@ class ALPACAKernel(Kernel):
                 self.sresplotmode = 1 # Do matplotlib-esque (array) plotting
             elif apargs.mode == 'thonny':
                 self.sresplotmode = 2 # Do thonny-esque (live) plotting
+            elif apargs.mode == 'None':
+                self.sresplotmode = 0 
             else:
                 self.sresplotmode = 0
             return cellcontents
@@ -667,7 +669,7 @@ class ALPACAKernel(Kernel):
         if self.silent:
             return
 
-        if output is None:
+        if output is None or output == '':
             return
 
         if self.sresplotmode == 0:
