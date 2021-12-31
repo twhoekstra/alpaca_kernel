@@ -838,6 +838,9 @@ class ALPACAKernel(Kernel):
         self.sresThonnyiteration = 0
 
     def sendPLOT(self, update_id = None):
+        if self.sresstartedplot == 0:
+            return None
+
         # We create a PNG out of this plot.
         png = _to_png(self.fig)
 
