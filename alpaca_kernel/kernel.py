@@ -739,7 +739,7 @@ class ALPACAKernel(Kernel):
                 settings = ast.literal_eval(settings)
 
                 ii = data.find('], [')
-                self.xx, self.yy = (data[1: ii+1], data[ii+3:-1])
+                self.xx, self.yy = (data[1: ii+1], data[ii+3:data.rfind(']')])
 
                 for axis_num, axis in enumerate((self.xx, self.yy)):
                     if not string_is_array(axis):
