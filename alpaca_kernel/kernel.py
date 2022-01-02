@@ -673,7 +673,7 @@ class ALPACAKernel(Kernel):
         #if output is None or output == '':
         #    return
 
-        if self.sresplotmode == 0:
+        if self.sresplotmode == 0: # Plotting on but no plot commands used in code
             self.sres(output)
             #raise RuntimeError("Tried to plot but the global plotting mode was set to 0")
             return
@@ -693,8 +693,9 @@ class ALPACAKernel(Kernel):
                                 'title' : 'set_title'} 
                                 # Key: accepted input, Value: function to run as ouput
             ATTRIBUTE_PREFIX = '%matplotlib --' # Prefix to recognize attribute
-            try:
-                if output != None and ATTRIBUTE_PREFIX in output:
+            
+            if output != None and ATTRIBUTE_PREFIX in output: # User is trying change the plot settings
+                try:
                     if self.ax != None: # If plot was made
                         output = output.replace(ATTRIBUTE_PREFIX,'')
                         ii = output.find('(')
@@ -714,64 +715,72 @@ class ALPACAKernel(Kernel):
                                         args[ii] = float(arg)
                                     else:
                                         args[ii] = arg.replace('"', '').replace('\'', '')
+                except (AttributeError, SyntaxError, ValueError) as e:
+                    # Catch formatting errors
+                    self.sresPLOTgracefulexit(output)
+                    return None
+                try:                
+                    attribute_name = VALID_ATTRIBUTES[attribute]
+                    if '{' in output and '{}' not in output: # read kwargs
+                        kwargs = output[jj:output.find(')')]
+                        kwargs = ast.literal_eval(kwargs)
+                        getattr(self.ax, attribute_name)(*args, **kwargs) # Run command
+                        logging.debug(f'Plot setting {attribute_name} changed')
+                        return None    
+                    else: # no kwargs
+                        getattr(self.ax, attribute_name)(*args)
+                        logging.debug(f'Plot setting {attribute_name} changed')
+                        return None
+                except Exception:
+                    # Pass plotting errors to user
+                    tb = traceback.format_exc()
+                    self.sres(tb)
+                    return None
+            else:
+                try: # Normal plot, no settings
+                    settings, data = output.split('}')
+                    settings += '}'
 
-                                if '{' in output and '{}' not in output: # read kwargs
-                                    kwargs = output[jj:output.find(')')]
-                                    kwargs = ast.literal_eval(kwargs)
+                    settings = ast.literal_eval(settings)
 
-                                    try:
-                                        getattr(self.ax, VALID_ATTRIBUTES[attribute])(*args, **kwargs) # Run command
-                                    except AttributeError:
-                                        getattr(self.ax, VALID_ATTRIBUTES[attribute])(*args)
-                                else: # no kwargs
-                                    getattr(self.ax, VALID_ATTRIBUTES[attribute])(*args)
+                    ii = data.find('], [')
+                    self.xx, self.yy = (data[1: ii+1], data[ii+3:data.rfind(']')])
 
-                else:
-                    pass # Not an attribute
-            except (AttributeError, SyntaxError, ValueError) as e:
-                self.sresPLOTgracefulexit(output)
-                return
+                    for axis_num, axis in enumerate((self.xx, self.yy)):
+                        if not string_is_array(axis):
+                            raise SyntaxError(f"Expected {'X' if not axis_num else 'Y'} axis to be formatted correctly. Current format: {axis}")
 
-            try: # Normal plot
-                settings, data = output.split('}')
-                settings += '}'
+                    self.xx = string_to_numpy(self.xx)
+                    self.yy = string_to_numpy(self.yy)
+                    self.xx = np.squeeze(self.xx)
+                    self.yy = np.squeeze(self.yy)
 
-                settings = ast.literal_eval(settings)
+                except (AttributeError, SyntaxError, ValueError) as e:
+                    # Incorrect formatting, this should not happen when using
+                    # The plotting module for the ALPACA
+                    self.sresPLOTgracefulexit(output)
+                    logging.debug(traceback.format_exc())
+                    return None
 
-                ii = data.find('], [')
-                self.xx, self.yy = (data[1: ii+1], data[ii+3:data.rfind(']')])
+                # the data is good and plotting can commence
+                if not self.sresstartedplot:
+                    self.sresPLOTcreator()
 
-                for axis_num, axis in enumerate((self.xx, self.yy)):
-                    if not string_is_array(axis):
-                        raise SyntaxError(f"Expected {'X' if not axis_num else 'Y'} axis to be formatted correctly. Current format: {axis}")
+                # default value for [fmt]
+                fmt = settings.pop('fmt', '')
+                kwargs = {}
+                for key, value in settings.items():
+                    if key in VALID_KEYS:
+                        kwargs[key] = value
 
-                self.xx = string_to_numpy(self.xx)
-                self.yy = string_to_numpy(self.yy)
-                self.xx = np.squeeze(self.xx)
-                self.yy = np.squeeze(self.yy)
-
-            except (AttributeError, SyntaxError, ValueError) as e:
-                self.sresPLOTgracefulexit(output)
-                logging.debug(traceback.format_exc())
-                return
-                #raise #TypeError("Expected input to plotter to be a string")
-
-            # the data is good and plotting can commence
-            if not self.sresstartedplot:
-                self.sresPLOTcreator()
-
-            # default value for [fmt]
-            fmt = settings.pop('fmt', '')
-            kwargs = {}
-            for key, value in settings.items():
-                if key in VALID_KEYS:
-                    kwargs[key] = value
-            try:
-                self.ax.plot(self.xx, self.yy, fmt, **kwargs)
-            except Exception:
-                tb = traceback.format_exc()
-                self.sres(tb)
-            return
+                try:
+                    self.ax.plot(self.xx, self.yy, fmt, **kwargs)
+                except Exception:
+                    # Pass plotting errors to user
+                    tb = traceback.format_exc()
+                    self.sres(tb)
+                    return None
+                return None
 
         if self.sresplotmode == 2: # Thonny-eqsue plotting
             # format print("Random walk:", p1, " just random:", p2)
