@@ -662,8 +662,27 @@ class ALPACAKernel(Kernel):
             self.send_response(self.iopub_socket, 'clear_output', {"wait":True})
         if asciigraphicscode:
             output = "\x1b[{}m{}\x1b[0m".format(asciigraphicscode, output)
-        stream_content = {'name': ("stdout" if n04count == 0 else "stderr"), 'text': output }
-        self.send_response(self.iopub_socket, 'stream', stream_content)
+        #stream_content = {'name': ("stdout" if n04count == 0 else "stderr"), 'text': output }
+
+        content = {
+            'source': 'kernel',
+
+            # This dictionary may contain
+            # different MIME representations of
+            # the output.
+            'data': {
+                'text': output
+            },
+
+            # We can specify the image size
+            # in the metadata field.
+            'metadata' : {
+            }
+        }
+
+        #self.send_response(self.iopub_socket, 'stream', stream_content)
+        self.send_response(self.iopub_socket,
+                    'display_data', content)
 
     def sresPLOT(self, output: str, asciigraphicscode=None, n04count=0, clear_output=False):
         #logging.debug(output)
@@ -714,12 +733,12 @@ class ALPACAKernel(Kernel):
                                         args[ii] = float(arg)
                                     else:
                                         args[ii] = arg.replace('"', '').replace('\'', '')
+                    attribute_name = VALID_ATTRIBUTES[attribute] 
                 except (AttributeError, SyntaxError, ValueError) as e:
                     # Catch formatting errors
                     self.sresPLOTgracefulexit(output)
                     return None
                 try:                
-                    attribute_name = VALID_ATTRIBUTES[attribute]
                     if '{' in output and '{}' not in output: # read kwargs
                         kwargs = output[jj:output.find(')')]
                         kwargs = ast.literal_eval(kwargs)
