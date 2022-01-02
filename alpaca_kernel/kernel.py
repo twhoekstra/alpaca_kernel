@@ -752,6 +752,7 @@ class ALPACAKernel(Kernel):
 
             except (AttributeError, SyntaxError, ValueError) as e:
                 self.sresPLOTgracefulexit(output)
+                logging.debug(traceback.format_exc())
                 return
                 #raise #TypeError("Expected input to plotter to be a string")
 
