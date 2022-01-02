@@ -671,7 +671,7 @@ class ALPACAKernel(Kernel):
             # different MIME representations of
             # the output.
             'data': {
-                'text': output
+                'text/plain': output
             },
 
             # We can specify the image size
