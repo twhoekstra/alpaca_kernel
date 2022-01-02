@@ -666,12 +666,12 @@ class ALPACAKernel(Kernel):
         self.send_response(self.iopub_socket, 'stream', stream_content)
 
     def sresPLOT(self, output: str, asciigraphicscode=None, n04count=0, clear_output=False):
-        logging.debug(output)
+        #logging.debug(output)
         if self.silent:
             return
 
-        if output is None or output == '':
-            return
+        #if output is None or output == '':
+        #    return
 
         if self.sresplotmode == 0:
             self.sres(output)
@@ -690,11 +690,12 @@ class ALPACAKernel(Kernel):
                                 'grid' : 'grid',
                                 'xlabel' : 'set_xlabel',
                                 'ylabel' : 'set_ylabel',
-                                'title' : 'set_title'} # Key: accepted input, Value: function to run as ouput
+                                'title' : 'set_title'} 
+                                # Key: accepted input, Value: function to run as ouput
             ATTRIBUTE_PREFIX = '%matplotlib --' # Prefix to recognize attribute
             try:
                 if output != None and ATTRIBUTE_PREFIX in output:
-                    if ax != None: # If plot was made
+                    if self.ax != None: # If plot was made
                         output = output.replace(ATTRIBUTE_PREFIX,'')
                         ii = output.find('(')
                         jj = output.find('{')-2 if '{' in output else output.find(')')
@@ -704,7 +705,7 @@ class ALPACAKernel(Kernel):
                             args = output[ii+1:jj]
 
                             if args == '':
-                                getattr(ax, VALID_ATTRIBUTES[attribute])() # Run command
+                                getattr(self.ax, VALID_ATTRIBUTES[attribute])() # Run command
                             else:
                                 args = args.split(', ')
                                 print(args)
@@ -731,13 +732,13 @@ class ALPACAKernel(Kernel):
                 self.sresPLOTgracefulexit(output)
                 return
 
-            try:
+            try: # Normal plot
                 settings, data = output.split('}')
                 settings += '}'
 
                 settings = ast.literal_eval(settings)
 
-                ii = data.find('], [')
+                ii = data.rfind('], [')
                 self.xx, self.yy = (data[1: ii+1], data[ii+3:].split(']]')[0]+']')
 
                 for axis_num, axis in enumerate((self.xx, self.yy)):
