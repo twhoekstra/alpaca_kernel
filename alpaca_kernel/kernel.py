@@ -682,7 +682,6 @@ class ALPACAKernel(Kernel):
             # Format for string is {dictionary of settings}[[x axis], [y axis]]
             VALID_KEYS = ['color','linestyle','linewidth', 'marker', 'label']
             # Format for attribute is ATTRIBUTE_PREFIXattribute(parameters)
-            self.fig, self.ax = plt.subplots(1, 1, figsize=(6,4), dpi=100)
 
             VALID_ATTRIBUTES = {'legend' : 'legend',
                                 'hlines' : 'hlines',
@@ -764,6 +763,7 @@ class ALPACAKernel(Kernel):
 
                 # the data is good and plotting can commence
                 if not self.sresstartedplot:
+                    logging.debug('Created a new plot')
                     self.sresPLOTcreator()
 
                 # default value for [fmt]
