@@ -907,7 +907,7 @@ class ALPACAKernel(Kernel):
                 'display_id' : str(plot_uuid)
             },
             
-            'wait' : True
+            'wait' : False
         }
 
         # We send the display_data message with
