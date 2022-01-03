@@ -901,11 +901,11 @@ class ALPACAKernel(Kernel):
                     'width': 600,
                     'height': 400
                 }
-                },
+                }#,
 
-            'transient' : {
-                'display_id' : str(plot_uuid)
-            }
+            #'transient' : {
+            #    'display_id' : str(plot_uuid)
+            #}
         }
 
 
@@ -923,8 +923,6 @@ class ALPACAKernel(Kernel):
         else: # creating new plot
             self.send_response(self.iopub_socket,
                     'display_data', content)
-
-            
 
             return plot_uuid # Return new UUID for futre reference
             #logging.debug(f'Created new display data')
