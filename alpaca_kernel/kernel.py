@@ -664,6 +664,7 @@ class ALPACAKernel(Kernel):
             output = "\x1b[{}m{}\x1b[0m".format(asciigraphicscode, output)
         
         stream_content = {'name': ("stdout" if n04count == 0 else "stderr"), 'text': output }
+        
         self.send_response(self.iopub_socket, 'stream', stream_content)
         
     def sresPLOT(self, output: str, asciigraphicscode=None, n04count=0, clear_output=False):
@@ -688,6 +689,8 @@ class ALPACAKernel(Kernel):
                                 'hlines' : 'hlines',
                                 'vlines' : 'vlines',
                                 'grid' : 'grid',
+                                'xlim' : 'xlim',
+                                'ylim' : 'ylim',
                                 'xlabel' : 'set_xlabel',
                                 'ylabel' : 'set_ylabel',
                                 'title' : 'set_title'} 
