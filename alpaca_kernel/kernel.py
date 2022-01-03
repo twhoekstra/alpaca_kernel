@@ -912,11 +912,12 @@ class ALPACAKernel(Kernel):
         # We send the display_data message with
         # the contents.
         if update:
-            self.send_response(self.iopub_socket,
-                'update_display_data', content)
 
             self.send_response(self.iopub_socket,
                 'clear_output', {'wait' : True})
+
+            self.send_response(self.iopub_socket,
+                'update_display_data', content)
             
             #logging.debug(f'Updated display data')
         else: # creating new plot
