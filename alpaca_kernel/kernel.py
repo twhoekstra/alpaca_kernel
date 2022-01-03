@@ -905,7 +905,9 @@ class ALPACAKernel(Kernel):
 
             'transient' : {
                 'display_id' : str(plot_uuid)
-            }
+            },
+            
+            'wait' : True
         }
 
         # We send the display_data message with
