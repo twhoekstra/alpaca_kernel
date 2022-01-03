@@ -680,6 +680,8 @@ class ALPACAKernel(Kernel):
             #raise RuntimeError("Tried to plot but the global plotting mode was set to 0")
             return
 
+        
+
         if self.sresplotmode == 1: # matplotlib-esque (array) plotting
             # Format for string is {dictionary of settings}[[x axis], [y axis]]
             VALID_KEYS = ['color','linestyle','linewidth', 'marker', 'label']
@@ -696,6 +698,10 @@ class ALPACAKernel(Kernel):
                                 'title' : 'set_title'} 
                                 # Key: accepted input, Value: function to run as ouput
             ATTRIBUTE_PREFIX = '%matplotlib --' # Prefix to recognize attribute
+
+            if output == ATTRIBUTE_PREFIX + "--update" and self.sresstartedplot:
+                self.sendPLOT()
+                return None
             
             if output != None and ATTRIBUTE_PREFIX in output: # User is trying change the plot settings
                 try:
@@ -844,10 +850,10 @@ class ALPACAKernel(Kernel):
     def sresPLOTgracefulexit(self, output):
         #If unplottable, just print
         self.sres(output)
-        self.sresplotmode = 0
+        
 
     def sresPLOTkiller(self):
-        #self.sresplotmode = 0 # Reset plot
+        self.sresplotmode = 0 # Reset plot
         self.sresstartedplot = False
         self.fig, self.ax = (None, None)
         self.sresThonnyiteration = 0
