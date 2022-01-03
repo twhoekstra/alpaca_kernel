@@ -914,12 +914,15 @@ class ALPACAKernel(Kernel):
         if update:
             self.send_response(self.iopub_socket,
                 'update_display_data', content)
-            self.send_response(self.iopub_socket,
-                'clear_output', {'wait' : True})
+            
             #logging.debug(f'Updated display data')
         else: # creating new plot
             self.send_response(self.iopub_socket,
                     'display_data', content)
+
+            self.send_response(self.iopub_socket,
+                'clear_output', {'wait' : True})
+
             return plot_uuid # Return new UUID for futre reference
             #logging.debug(f'Created new display data')
 
