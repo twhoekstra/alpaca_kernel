@@ -689,8 +689,8 @@ class ALPACAKernel(Kernel):
                                 'hlines' : 'hlines',
                                 'vlines' : 'vlines',
                                 'grid' : 'grid',
-                                'xlim' : 'xlim',
-                                'ylim' : 'ylim',
+                                'xlim' : 'set_xlim',
+                                'ylim' : 'set_ylim',
                                 'xlabel' : 'set_xlabel',
                                 'ylabel' : 'set_ylabel',
                                 'title' : 'set_title'} 
@@ -725,7 +725,7 @@ class ALPACAKernel(Kernel):
                     return None
                 try:                
                     if '{' in output and '{}' not in output: # read kwargs
-                        kwargs = output[jj:output.find(')')]
+                        kwargs = output[jj+2:output.find(')')]
                         kwargs = ast.literal_eval(kwargs)
                         getattr(self.ax, attribute_name)(*args, **kwargs) # Run command
                         logging.debug(f'Plot setting {attribute_name} changed')
