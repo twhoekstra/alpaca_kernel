@@ -12,6 +12,8 @@ import urllib
 import uuid
 from io import BytesIO
 
+import argparse # use of argparse for handling the %commands in the cells
+import shlex # use of shlex for handling the %commands in the cells
 import IPython
 import matplotlib.pyplot as plt
 import numpy as np
@@ -25,12 +27,33 @@ from . import deviceconnector
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.INFO)
 
+# --------------------- Plotting settings ----------------------------
+DEFAULT_PLOT_MODE = 1 # 0 = no plot, 1 = matplotlib plot, 2 = live plot
+
+# --------- Constants for plotting in matplotlib style ---------------
+# Format for string is {dictionary of settings}[[x axis], [y axis]]
+VALID_KEYS = ['color','linestyle','linewidth', 'marker', 'label']
+# Format for attribute is ATTRIBUTE_PREFIXattribute(parameters)
+
+VALID_ATTRIBUTES = {'legend' : 'legend',
+                    'hlines' : 'hlines',
+                    'vlines' : 'vlines',
+                    'grid' : 'grid',
+                    'xlim' : 'set_xlim',
+                    'ylim' : 'set_ylim',
+                    'xlabel' : 'set_xlabel',
+                    'ylabel' : 'set_ylabel',
+                    'title' : 'set_title'} 
+                    # Key: accepted input, Value: function to run as ouput
+ATTRIBUTE_PREFIX = '%matplotlib --' # Prefix to recognize attribute
+PLOT_PREFIX = '%matplotlibdatastream --'
+
+# --------------------------------------------------------------------
+
 serialtimeout = 0.5
 serialtimeoutcount = 10
 
-# use of argparse for handling the %commands in the cells
-import argparse
-import shlex
+
 
 ap_plot = argparse.ArgumentParser(prog="%plot", add_help=False)
 ap_plot.add_argument('--mode', choices=['matplotlib', 'thonny', 'None'], default = 'matplotlib')
@@ -222,7 +245,7 @@ def unpack_Thonny_string(output):
 
 class ALPACAKernel(Kernel):
     implementation = 'alpaca_kernel'
-    implementation_version = "v3"
+    implementation_version = "v1"
 
     banner = "MicroPython Serializer for ALPACA"
 
@@ -242,9 +265,9 @@ class ALPACAKernel(Kernel):
         self.srescapturedlinecount = 0
         self.srescapturedlasttime = 0       # to control the frequency of capturing reported
 
-        self.sresplotmode = 0 # 0 plottinf off, 1 plotting on
+        self.sresplotmode = DEFAULT_PLOT_MODE
         self.sresstartedplot = 0 #
-        self.sresThonnyiteration = 0
+        self.sresliveiteration = 0
 
     def interpretpercentline(self, percentline, cellcontents):
         try:
@@ -408,17 +431,16 @@ class ALPACAKernel(Kernel):
         if not self.dc.serialexists():
             return cellcontents
 
-
         if percentcommand == ap_plot.prog:
             apargs = parseap(ap_plot, percentstringargs[1:])
             if apargs.mode == 'matplotlib':
-                self.sresplotmode = 1 # Do matplotlib-esque (array) plotting
-            elif apargs.mode == 'thonny':
-                self.sresplotmode = 2 # Do thonny-esque (live) plotting
-            elif apargs.mode == 'None':
+                self.sresplotmode = 1 # matplotlib-esque (array) plotting
+            elif apargs.mode == 'live':
+                self.sresplotmode = 2 # live plotting
+            elif apargs.mode == 'none':
                 self.sresplotmode = 0 
             else:
-                self.sresplotmode = 0
+                self.sresplotmode = DEFAULT_PLOT_MODE
             return cellcontents
 
         if percentcommand == ap_capture.prog:
@@ -676,33 +698,16 @@ class ALPACAKernel(Kernel):
         #    return
 
         if self.sresplotmode == 0: # Plotting on but no plot commands used in code
-            self.sres(output)
-            #raise RuntimeError("Tried to plot but the global plotting mode was set to 0")
+            self.sres(output, n04count=n04count)
             return
 
-        
-
         if self.sresplotmode == 1: # matplotlib-esque (array) plotting
-            # Format for string is {dictionary of settings}[[x axis], [y axis]]
-            VALID_KEYS = ['color','linestyle','linewidth', 'marker', 'label']
-            # Format for attribute is ATTRIBUTE_PREFIXattribute(parameters)
-
-            VALID_ATTRIBUTES = {'legend' : 'legend',
-                                'hlines' : 'hlines',
-                                'vlines' : 'vlines',
-                                'grid' : 'grid',
-                                'xlim' : 'set_xlim',
-                                'ylim' : 'set_ylim',
-                                'xlabel' : 'set_xlabel',
-                                'ylabel' : 'set_ylabel',
-                                'title' : 'set_title'} 
-                                # Key: accepted input, Value: function to run as ouput
-            ATTRIBUTE_PREFIX = '%matplotlib --' # Prefix to recognize attribute
-
+            
             if output == ATTRIBUTE_PREFIX + "--update" and self.sresstartedplot:
                 self.sendPLOT()
                 return None
             
+            #------------------- PLOT SETTINGS ---------------------
             if output != None and ATTRIBUTE_PREFIX in output: # User is trying change the plot settings
                 try:
                     if self.ax != None: # If plot was made
@@ -724,11 +729,15 @@ class ALPACAKernel(Kernel):
                                         args[ii] = float(arg)
                                     else:
                                         args[ii] = arg.replace('"', '').replace('\'', '')
-                    attribute_name = VALID_ATTRIBUTES[attribute] 
+                    if attribute in VALID_ATTRIBUTES:
+                        attribute_name = VALID_ATTRIBUTES[attribute]
+                    else:
+                        attribute_name = attribute 
                 except (AttributeError, SyntaxError, ValueError) as e:
                     # Catch formatting errors
-                    self.sresPLOTgracefulexit(output)
+                    self.sres(output, n04count=n04count)
                     return None
+
                 try:                
                     if '{' in output and '{}' not in output: # read kwargs
                         kwargs = output[jj+2:output.find(')')]
@@ -743,9 +752,13 @@ class ALPACAKernel(Kernel):
                 except Exception:
                     # Pass plotting errors to user
                     tb = traceback.format_exc()
-                    self.sres(tb)
+                    self.sres(tb, n04count = 1)
                     return None
-            else:
+
+            #----------- PLOT DATA -------------------
+            elif output != None and PLOT_PREFIX in output:
+                output = output.replace(ATTRIBUTE_PREFIX,'')
+
                 try: # Normal plot, no settings
                     settings, data = output.split('}')
                     settings += '}'
@@ -767,7 +780,7 @@ class ALPACAKernel(Kernel):
                 except (AttributeError, SyntaxError, ValueError) as e:
                     # Incorrect formatting, this should not happen when using
                     # The plotting module for the ALPACA
-                    self.sresPLOTgracefulexit(output)
+                    self.sres(output, n04count=n04count)
                     logging.debug(traceback.format_exc())
                     return None
 
@@ -788,9 +801,12 @@ class ALPACAKernel(Kernel):
                 except Exception:
                     # Pass plotting errors to user
                     tb = traceback.format_exc()
-                    self.sres(tb)
+                    self.sres(tb, n04count = 1)
                     return None
                 return None
+
+            else: # Not something to plot, just print
+                self.sres(output, n04count=n04count)
 
         if self.sresplotmode == 2: # Thonny-eqsue plotting
             # format print("Random walk:", p1, " just random:", p2)
@@ -802,7 +818,7 @@ class ALPACAKernel(Kernel):
 
                 data = unpack_Thonny_string(output)
             except ValueError:
-                self.sres(output)
+                self.sres(output, n04count=n04count)
                 return
 
             # the data is good and plotting can commence
@@ -843,29 +859,24 @@ class ALPACAKernel(Kernel):
             self.ax.set_xlim(xx_minimum-xx_edge_size, xx_maximum+xx_edge_size)
             #self.ax.plot(self.xx, self.yy, label =  # Plot
 
-            if self.sresThonnyiteration:
+            if self.sresliveiteration:
                 self.sendPLOT(update_id = self.plot_uuid) # Use old plot and display
             else:
                 self.plot_uuid = self.sendPLOT() # Create new plot and store UUID
 
-            self.sresThonnyiteration += 1
-            return
+            self.sresliveiteration += 1
+            return None
 
     def sresPLOTcreator(self):
         # We create the plot with matplotlib.
         self.fig, self.ax = plt.subplots(1, 1, figsize=(6,4), dpi=100)
         self.sresstartedplot = True
-
-    def sresPLOTgracefulexit(self, output):
-        #If unplottable, just print
-        self.sres(output)
         
-
     def sresPLOTkiller(self):
-        self.sresplotmode = 0 # Reset plot
+        self.sresplotmode = DEFAULT_PLOT_MODE # Reset plot
         self.sresstartedplot = False
         self.fig, self.ax = (None, None)
-        self.sresThonnyiteration = 0
+        self.sresliveiteration = 0
 
     def sendPLOT(self, update_id = None):
         if self.sresstartedplot == 0:
