@@ -36,6 +36,8 @@ VALID_KEYS = ['color','linestyle','linewidth', 'marker', 'label']
 # Format for attribute is ATTRIBUTE_PREFIXattribute(parameters)
 
 VALID_ATTRIBUTES = {'legend' : 'legend',
+                    'axhline' : 'axhline',
+                    'axvline' : 'axvline', 
                     'hlines' : 'hlines',
                     'vlines' : 'vlines',
                     'grid' : 'grid',
