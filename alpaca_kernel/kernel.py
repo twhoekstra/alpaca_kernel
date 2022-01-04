@@ -716,39 +716,39 @@ class ALPACAKernel(Kernel):
                         jj = output.find('{')-2 if '{' in output else output.find(')')
                         attribute = output[:ii]
 
-                        if attribute in VALID_ATTRIBUTES:
-                            args = output[ii+1:jj]
+                        filtered_attribute = VALID_ATTRIBUTES.get(attribute, attribute)
 
-                            if args == '':
-                                getattr(self.ax, VALID_ATTRIBUTES[attribute])() # Run command
-                            else:
-                                args = args.split(', ')
-                                print(args)
-                                for ii, arg in enumerate(args):
-                                    if sum(cc.isalpha() for cc in arg) == 0: # Numbers
-                                        args[ii] = float(arg)
-                                    else:
-                                        args[ii] = arg.replace('"', '').replace('\'', '')
-                    if attribute in VALID_ATTRIBUTES:
-                        attribute_name = VALID_ATTRIBUTES[attribute]
-                    else:
-                        attribute_name = attribute 
+                        args = output[ii+1:jj]
+
+                        if args != '':
+                            args = args.split(', ')
+                            print(args)
+                            for ii, arg in enumerate(args):
+                                if sum(cc.isalpha() for cc in arg) == 0: # Numbers
+                                    args[ii] = float(arg)
+                                else:
+                                    args[ii] = arg.replace('"', '').replace('\'', '')
+                    
                 except (AttributeError, SyntaxError, ValueError) as e:
                     # Catch formatting errors
                     self.sres(output, n04count=n04count)
                     return None
 
-                try:                
+                try:   
+                    if args == '':
+                        getattr(self.ax, VALID_ATTRIBUTES[attribute])() # Run command
+
                     if '{' in output and '{}' not in output: # read kwargs
                         kwargs = output[jj+2:output.find(')')]
                         kwargs = ast.literal_eval(kwargs)
-                        getattr(self.ax, attribute_name)(*args, **kwargs) # Run command
-                        logging.debug(f'Plot setting {attribute_name} changed')
+                        getattr(self.ax, filtered_attribute)(*args, **kwargs) # Run command
+                        logging.debug(f'Plot setting {filtered_attribute} changed')
                         return None    
                     else: # no kwargs
-                        getattr(self.ax, attribute_name)(*args)
-                        logging.debug(f'Plot setting {attribute_name} changed')
+                        getattr(self.ax, filtered_attribute)(*args)
+                        logging.debug(f'Plot setting {filtered_attribute} changed')
                         return None
+
                 except Exception:
                     # Pass plotting errors to user
                     tb = traceback.format_exc()
@@ -757,7 +757,7 @@ class ALPACAKernel(Kernel):
 
             #----------- PLOT DATA -------------------
             elif output != None and PLOT_PREFIX in output:
-                output = output.replace(ATTRIBUTE_PREFIX,'')
+                output = output.replace(PLOT_PREFIX,'')
 
                 try: # Normal plot, no settings
                     settings, data = output.split('}')
