@@ -46,7 +46,7 @@ VALID_ATTRIBUTES = {'legend' : 'legend',
                     'title' : 'set_title'} 
                     # Key: accepted input, Value: function to run as ouput
 ATTRIBUTE_PREFIX = '%matplotlib --' # Prefix to recognize attribute
-PLOT_PREFIX = '%matplotlibdatastream --'
+PLOT_PREFIX = '%matplotlibdata --'
 
 # --------------------------------------------------------------------
 
