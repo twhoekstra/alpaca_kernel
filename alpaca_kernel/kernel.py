@@ -56,7 +56,7 @@ serialtimeoutcount = 10
 
 
 ap_plot = argparse.ArgumentParser(prog="%plot", add_help=False)
-ap_plot.add_argument('--mode', choices=['matplotlib', 'thonny', 'None'], default = 'matplotlib')
+ap_plot.add_argument('--mode', type=str, default = 'matplotlib')
 
 ap_serialconnect = argparse.ArgumentParser(prog="%serialconnect", add_help=False)
 ap_serialconnect.add_argument('--raw', help='Just open connection', action='store_true')
