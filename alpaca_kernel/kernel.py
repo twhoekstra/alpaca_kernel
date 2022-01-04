@@ -728,7 +728,8 @@ class ALPACAKernel(Kernel):
                                     args[ii] = float(arg)
                                 else:
                                     args[ii] = arg.replace('"', '').replace('\'', '')
-                    
+                    else:
+                        return None
                 except (AttributeError, SyntaxError, ValueError) as e:
                     # Catch formatting errors
                     self.sres(output, n04count=n04count)
