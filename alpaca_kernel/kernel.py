@@ -830,8 +830,17 @@ class ALPACAKernel(Kernel):
                 line.set_ydata(self.yy[:,ii])
 
             #self.ax.autoscale()
-            self.ax.set_ylim(np.amin(self.yy)-0.1, np.amax(self.yy)+0.1)
-            self.ax.set_xlim(np.amin(self.xx)-0.1, np.amax(self.xx)+0.1)
+            yy_minimum = np.amin(self.yy)
+            yy_maximum = np.amax(self.yy)
+            yy_edge_size = (yy_maximum - yy_minimum)/10
+
+            xx_minimum = np.amin(self.xx)
+            xx_maximum = np.amax(self.xx)
+            xx_edge_size = (xx_maximum - xx_minimum)/10
+
+
+            self.ax.set_ylim(yy_minimum-yy_edge_size, yy_maximum+yy_edge_size)
+            self.ax.set_xlim(xx_minimum-xx_edge_size, xx_maximum+xx_edge_size)
             #self.ax.plot(self.xx, self.yy, label =  # Plot
 
             if self.sresThonnyiteration:
