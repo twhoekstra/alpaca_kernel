@@ -765,9 +765,10 @@ class ALPACAKernel(Kernel):
                     data = output[kk+1:]
 
                     settings = ast.literal_eval(settings)
+                    data = data.replace('bytearray(','')
 
                     ii = data.find('], [')
-                    string_xx, string_yy = (data[2: ii], data[ii+4:data.rfind(']')-1])
+                    string_xx, string_yy = (data[2: ii-1], data[ii+4:data.rfind(']')-2])
                     
                     try:
                         byte_xx = ast.literal_eval(string_xx)
@@ -785,8 +786,8 @@ class ALPACAKernel(Kernel):
                     except Exception as e:
                         raise RuntimeError(f'Couldn\'t read shape from string: {yy_shape_string}') from e
 
-                    self.xx = np.frombuffer(byte_xx, dtype=np.float64)
-                    self.yy = np.frombuffer(byte_yy, dtype=np.float64).reshape(yy_shape)
+                    self.xx = np.frombuffer(byte_xx, dtype=np.float32)
+                    self.yy = np.frombuffer(byte_yy, dtype=np.float32).reshape(yy_shape)
 
                 except Exception as e:
                     # Incorrect formatting, this should not happen when using
