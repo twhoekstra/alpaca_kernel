@@ -730,6 +730,14 @@ class ALPACAKernel(Kernel):
                                     args[ii] = float(arg)
                                 else:
                                     args[ii] = arg.replace('"', '').replace('\'', '')
+                        else:
+                            args = ()
+
+                        if '{' in output and '{}' not in output: # read kwargs
+                            kwargs = output[jj+2:output.find(')')]
+                            kwargs = ast.literal_eval(kwargs)
+                        else:
+                            kwargs = {}
                     else:
                         return None
                 except (AttributeError, SyntaxError, ValueError) as e:
@@ -737,21 +745,10 @@ class ALPACAKernel(Kernel):
                     self.sres(output, n04count=n04count)
                     return None
 
-                try:   
-                    if args == '':
-                        getattr(self.ax, VALID_ATTRIBUTES[attribute])() # Run command
-
-                    if '{' in output and '{}' not in output: # read kwargs
-                        kwargs = output[jj+2:output.find(')')]
-                        kwargs = ast.literal_eval(kwargs)
-                        getattr(self.ax, filtered_attribute)(*args, **kwargs) # Run command
-                        logging.debug(f'Plot setting {filtered_attribute} changed')
-                        return None    
-                    else: # no kwargs
-                        getattr(self.ax, filtered_attribute)(*args)
-                        logging.debug(f'Plot setting {filtered_attribute} changed')
-                        return None
-
+                try:    
+                    getattr(self.ax, filtered_attribute)(*args, **kwargs) # Run command
+                    logging.debug(f'Plot setting {filtered_attribute} changed')
+                    return None    
                 except Exception:
                     # Pass plotting errors to user
                     tb = traceback.format_exc()
