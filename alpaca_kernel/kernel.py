@@ -1,5 +1,6 @@
 import ast
 import base64
+import binascii
 import logging
 import os
 import re
@@ -765,29 +766,21 @@ class ALPACAKernel(Kernel):
                     data = output[kk+1:]
 
                     settings = ast.literal_eval(settings)
-                    data = data.replace('bytearray(','')
 
                     ii = data.find('], [')
-                    string_xx, string_yy = (data[2: ii-1], data[ii+4:data.rfind(']')-2])
+                    xx_hex_data, yy_hex_data = (data[2: ii], data[ii+4:data.rfind(']')-1])
                     
-                    try:
-                        byte_xx = ast.literal_eval(string_xx)
-                    except Exception as e:
-                        raise RuntimeError(f'Couldn\'t read bytes from string: {string_xx}') from e
-                    
-                    try: 
-                        byte_yy = ast.literal_eval(string_yy)
-                    except Exception as e:
-                        raise RuntimeError(f'Couldn\'t read bytes from string: {string_yy}') from e
-                    
+                    xx_returned_data = bytearray(binascii.unhexlify(xx_hex_data))
+                    yy_returned_data = bytearray(binascii.unhexlify(yy_hex_data))
+
                     try:
                         yy_shape_string = data[data.rfind('('):]
                         yy_shape =  ast.literal_eval(yy_shape_string)
                     except Exception as e:
                         raise RuntimeError(f'Couldn\'t read shape from string: {yy_shape_string}') from e
 
-                    self.xx = np.frombuffer(byte_xx, dtype=np.float32)
-                    self.yy = np.frombuffer(byte_yy, dtype=np.float32).reshape(yy_shape)
+                    self.xx = np.frombuffer(xx_returned_data, dtype=np.float32)
+                    self.yy = np.frombuffer(yy_returned_data, dtype='f').reshape(yy_shape)
 
                 except Exception as e:
                     # Incorrect formatting, this should not happen when using
