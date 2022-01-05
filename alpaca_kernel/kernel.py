@@ -775,7 +775,7 @@ class ALPACAKernel(Kernel):
                     self.xx = np.frombuffer(byte_xx, dtype=np.float64)
                     self.yy = np.frombuffer(byte_yy, dtype=np.float64).reshape(yy_shape)
 
-                except (AttributeError, SyntaxError, ValueError) as e:
+                except Exception as e:
                     # Incorrect formatting, this should not happen when using
                     # The plotting module for the ALPACA
                     self.sres(output, n04count=n04count)
