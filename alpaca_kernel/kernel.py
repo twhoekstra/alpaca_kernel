@@ -758,24 +758,22 @@ class ALPACAKernel(Kernel):
             #----------- PLOT DATA -------------------
             elif output != None and PLOT_PREFIX in output:
                 output = output.replace(PLOT_PREFIX,'')
+                kk = output.find('}')
 
                 try: # Normal plot, no settings
-                    settings, data = output.split('}')
-                    settings += '}'
+                    settings = output[:kk+1]
+                    data = output[kk+1:]
 
                     settings = ast.literal_eval(settings)
 
                     ii = data.find('], [')
-                    self.xx, self.yy = (data[1: ii+1], data[ii+3:data.rfind(']')])
+                    string_xx, string_yy = (data[2: ii], data[ii+4:data.rfind(']')-1])
+                    byte_xx = ast.literal_eval(string_xx)
+                    byte_yy = ast.literal_eval(string_yy)
+                    yy_shape =  ast.literal_eval(data[data.rfind('('):])
 
-                    for axis_num, axis in enumerate((self.xx, self.yy)):
-                        if not string_is_array(axis):
-                            raise SyntaxError(f"Expected {'X' if not axis_num else 'Y'} axis to be formatted correctly. Current format: {axis}")
-
-                    self.xx = string_to_numpy(self.xx)
-                    self.yy = string_to_numpy(self.yy)
-                    self.xx = np.squeeze(self.xx)
-                    self.yy = np.squeeze(self.yy)
+                    self.xx = np.frombuffer(byte_xx, dtype=np.float64)
+                    self.yy = np.frombuffer(byte_yy, dtype=np.float64).reshape(yy_shape)
 
                 except (AttributeError, SyntaxError, ValueError) as e:
                     # Incorrect formatting, this should not happen when using
