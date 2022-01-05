@@ -248,7 +248,7 @@ def unpack_Thonny_string(output):
 
 class ALPACAKernel(Kernel):
     implementation = 'alpaca_kernel'
-    implementation_version = "v0.1.1"
+    implementation_version = "v0.1.2"
 
     banner = "MicroPython Serializer for ALPACA"
 
@@ -828,11 +828,12 @@ class ALPACAKernel(Kernel):
 
             # the data is good and plotting can commence
             
-            if not self.sresstartedplot or len(data) != self.number_lines: # (re)Instantiation
+            if not self.sresstartedplot: #or len(data) != self.number_lines: # (re)Instantiation
                 try:
-                    if not self.sresstartedplot:
-                        self.sresPLOTcreator()
-                        self.sresstartedplottime = time.time()
+                    #if not self.sresstartedplot:
+                    self.sresPLOTcreator() 
+                    self.sresstartedplottime = time.time()
+
                     self.number_lines = len(data)
                     self.yy = np.zeros((0, self.number_lines))
                     self.xx = np.zeros(0)
