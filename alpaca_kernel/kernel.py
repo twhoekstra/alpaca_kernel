@@ -772,18 +772,18 @@ class ALPACAKernel(Kernel):
                     try:
                         byte_xx = ast.literal_eval(string_xx)
                     except Exception as e:
-                        RuntimeError(f'Couldn\'t read bytes from string: {string_xx}')
+                        raise RuntimeError(f'Couldn\'t read bytes from string: {string_xx}') from e
                     
                     try: 
                         byte_yy = ast.literal_eval(string_yy)
                     except Exception as e:
-                        RuntimeError(f'Couldn\'t read bytes from string: {string_yy}')
+                        raise RuntimeError(f'Couldn\'t read bytes from string: {string_yy}') from e
                     
                     try:
                         yy_shape_string = data[data.rfind('('):]
                         yy_shape =  ast.literal_eval(yy_shape_string)
                     except Exception as e:
-                        RuntimeError(f'Couldn\'t read shape from string: {yy_shape_string}')
+                        raise RuntimeError(f'Couldn\'t read shape from string: {yy_shape_string}') from e
 
                     self.xx = np.frombuffer(byte_xx, dtype=np.float64)
                     self.yy = np.frombuffer(byte_yy, dtype=np.float64).reshape(yy_shape)
