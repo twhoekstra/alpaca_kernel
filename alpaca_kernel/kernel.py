@@ -757,10 +757,10 @@ class ALPACAKernel(Kernel):
 
             #----------- PLOT DATA -------------------
             elif output != None and PLOT_PREFIX in output:
-                output = output.replace(PLOT_PREFIX,'')
-                kk = output.find('}')
-
+                
                 try: # Normal plot, no settings
+                    output = output.replace(PLOT_PREFIX,'')
+                    kk = output.find('}')
                     settings = output[:kk+1]
                     data = output[kk+1:]
 
