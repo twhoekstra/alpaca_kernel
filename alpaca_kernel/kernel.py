@@ -248,7 +248,7 @@ def unpack_Thonny_string(output):
 
 class ALPACAKernel(Kernel):
     implementation = 'alpaca_kernel'
-    implementation_version = "v1"
+    implementation_version = "v0.1.0"
 
     banner = "MicroPython Serializer for ALPACA"
 
@@ -827,49 +827,58 @@ class ALPACAKernel(Kernel):
                 return
 
             # the data is good and plotting can commence
-            if not self.sresstartedplot or len(data) != self.number_lines: # (re)Instantiation
-                if not self.sresstartedplot:
-                    self.sresPLOTcreator()
-                    self.sresstartedplottime = time.time()
-                self.number_lines = len(data)
-                self.yy = np.zeros((0, self.number_lines))
-                self.xx = np.zeros(0)
-                self.lines = self.ax.plot(self.xx, self.yy)
+            try:
+                if not self.sresstartedplot or len(data) != self.number_lines: # (re)Instantiation
+                    if not self.sresstartedplot:
+                        self.sresPLOTcreator()
+                        self.sresstartedplottime = time.time()
+                    self.number_lines = len(data)
+                    self.yy = np.zeros((0, self.number_lines))
+                    self.xx = np.zeros(0)
+                    self.lines = self.ax.plot(self.xx, self.yy)
+                    for ii, line in enumerate(self.lines):
+                        line.set_label(list(data.keys())[ii])
+
+                    self.ax.legend()
+                    self.ax.grid()
+                    self.ax.set_xlabel("Time [s]")
+            except Exception:
+                self.sresstartedplot = 0
+                self.sres(output, n04count=n04count)
+                return None
+
+            try:
+                self.yy = np.append(self.yy, [list(data.values())], axis = 0)
+                self.xx = np.append(self.xx, time.time()-self.sresstartedplottime)
+
+                #self.ax.cla() # Clear
                 for ii, line in enumerate(self.lines):
-                    line.set_label(list(data.keys())[ii])
+                    line.set_xdata(self.xx)
+                    line.set_ydata(self.yy[:,ii])
 
-                self.ax.legend()
-                self.ax.grid()
-                self.ax.set_xlabel("Time [s]")
+                #self.ax.autoscale()
+                yy_minimum = np.amin(self.yy)
+                yy_maximum = np.amax(self.yy)
+                yy_edge_size = (yy_maximum - yy_minimum)/10
 
-            self.yy = np.append(self.yy, [list(data.values())], axis = 0)
-            self.xx = np.append(self.xx, time.time()-self.sresstartedplottime)
-
-            #self.ax.cla() # Clear
-            for ii, line in enumerate(self.lines):
-                line.set_xdata(self.xx)
-                line.set_ydata(self.yy[:,ii])
-
-            #self.ax.autoscale()
-            yy_minimum = np.amin(self.yy)
-            yy_maximum = np.amax(self.yy)
-            yy_edge_size = (yy_maximum - yy_minimum)/10
-
-            xx_minimum = np.amin(self.xx)
-            xx_maximum = np.amax(self.xx)
-            xx_edge_size = (xx_maximum - xx_minimum)/10
+                xx_minimum = np.amin(self.xx)
+                xx_maximum = np.amax(self.xx)
+                xx_edge_size = (xx_maximum - xx_minimum)/10
 
 
-            self.ax.set_ylim(yy_minimum-yy_edge_size, yy_maximum+yy_edge_size)
-            self.ax.set_xlim(xx_minimum-xx_edge_size, xx_maximum+xx_edge_size)
-            #self.ax.plot(self.xx, self.yy, label =  # Plot
+                self.ax.set_ylim(yy_minimum-yy_edge_size, yy_maximum+yy_edge_size)
+                self.ax.set_xlim(xx_minimum-xx_edge_size, xx_maximum+xx_edge_size)
+                #self.ax.plot(self.xx, self.yy, label =  # Plot
 
-            if self.sresliveiteration:
-                self.sendPLOT(update_id = self.plot_uuid) # Use old plot and display
-            else:
-                self.plot_uuid = self.sendPLOT() # Create new plot and store UUID
+                if self.sresliveiteration:
+                    self.sendPLOT(update_id = self.plot_uuid) # Use old plot and display
+                else:
+                    self.plot_uuid = self.sendPLOT() # Create new plot and store UUID
 
-            self.sresliveiteration += 1
+                self.sresliveiteration += 1
+            except Exception:
+                self.sres(output, n04count=n04count)
+                return None 
             return None
 
     def sresPLOTcreator(self):
