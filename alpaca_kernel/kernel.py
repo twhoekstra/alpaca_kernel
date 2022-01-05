@@ -768,8 +768,17 @@ class ALPACAKernel(Kernel):
 
                     ii = data.find('], [')
                     string_xx, string_yy = (data[2: ii], data[ii+4:data.rfind(']')-1])
-                    byte_xx = ast.literal_eval(string_xx)
-                    byte_yy = ast.literal_eval(string_yy)
+                    
+                    try:
+                        byte_xx = ast.literal_eval(string_xx)
+                    except Exception as e:
+                        RuntimeError(f'Couldn\'t read bytes from string: {string_xx}')
+                    
+                    try: 
+                        byte_yy = ast.literal_eval(string_yy)
+                    except Exception as e:
+                        RuntimeError(f'Couldn\'t read bytes from string: {string_yy}')
+
                     yy_shape =  ast.literal_eval(data[data.rfind('('):])
 
                     self.xx = np.frombuffer(byte_xx, dtype=np.float64)
