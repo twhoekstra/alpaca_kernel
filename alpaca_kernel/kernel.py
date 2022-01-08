@@ -248,7 +248,7 @@ def unpack_Thonny_string(output):
 
 class ALPACAKernel(Kernel):
     implementation = 'alpaca_kernel'
-    implementation_version = "v0.1.5"
+    implementation_version = "v0.1.6"
 
     banner = "MicroPython Serializer for ALPACA"
 
@@ -855,10 +855,8 @@ class ALPACAKernel(Kernel):
                     self.yy = np.append(self.yy, [list(data.values())], axis = 0)
                     self.xx = np.append(self.xx, time.time()-self.sresstartedplottime)
                 else:
-                    self.yy = np.roll(self.yy, -1, axis=0)
-                    self.xx = np.roll(self.xx, -1, axis=0)
-                    self.yy[-1,:] = list(data.values())
-                    self.xx[-1] = time.time()-self.sresstartedplottime
+                    self.yy = np.append(self.yy[1:,:], [list(data.values())], axis = 0)
+                    self.xx = np.append(self.xx[1:], time.time()-self.sresstartedplottime)
                     logging.debug(f'First time: {self.xx[0]}')
 
                 #self.ax.cla() # Clear
