@@ -248,7 +248,7 @@ def unpack_Thonny_string(output):
 
 class ALPACAKernel(Kernel):
     implementation = 'alpaca_kernel'
-    implementation_version = "v0.1.2"
+    implementation_version = "v0.1.3"
 
     banner = "MicroPython Serializer for ALPACA"
 
@@ -841,7 +841,7 @@ class ALPACAKernel(Kernel):
                     for ii, line in enumerate(self.lines):
                         line.set_label(list(data.keys())[ii])
 
-                    self.ax.legend()
+                    self.ax.legend(loc='upper center', ncol = 3)
                     self.ax.grid()
                     self.ax.set_xlabel("Time [s]")
                 except Exception:
@@ -855,8 +855,8 @@ class ALPACAKernel(Kernel):
                     self.yy = np.append(self.yy, [list(data.values())], axis = 0)
                     self.xx = np.append(self.xx, time.time()-self.sresstartedplottime)
                 else:
-                    self.yy = np.roll(self.yy, -1, axis=0)
-                    self.xx = np.roll(self.xx, -1, axis=0)
+                    self.yy = np.roll(self.yy, 1, axis=0)
+                    self.xx = np.roll(self.xx, 1, axis=0)
                     self.yy[-1,:] = list(data.values())
                     self.xx[-1] = time.time()-self.sresstartedplottime
 
@@ -875,7 +875,7 @@ class ALPACAKernel(Kernel):
                 xx_edge_size = (xx_maximum - xx_minimum)/10
 
 
-                self.ax.set_ylim(yy_minimum-yy_edge_size, yy_maximum+yy_edge_size)
+                self.ax.set_ylim(yy_minimum-yy_edge_size, yy_maximum+yy_edge_size*2) #Extra space for legend
                 self.ax.set_xlim(xx_minimum-xx_edge_size, xx_maximum+xx_edge_size)
                 #self.ax.plot(self.xx, self.yy, label =  # Plot
 
