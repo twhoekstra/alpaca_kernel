@@ -18,9 +18,9 @@ setuptools.setup(
     license='MIT',
     packages=['alpaca_kernel'],
     install_requires=[
-        'matplotlib>=3.4.3'
-        'numpy>=1.21.2'
-        'ipykernel>=5.5.5'
+        'matplotlib>=3.4.3',
+        'numpy>=1.21.2',
+        'ipykernel>=5.5.5',
         'jupyter >= 1.0.0'
     ],
 )
