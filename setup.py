@@ -21,6 +21,6 @@ setuptools.setup(
         'matplotlib>=3.4.3',
         'numpy>=1.21.2',
         'ipykernel>=5.5.5',
-        'jupyter >= 1.0.0'
+        'jupyter>=1.0.0'
     ],
 )
