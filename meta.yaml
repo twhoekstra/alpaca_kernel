@@ -1,0 +1,25 @@
+package:
+  name: "alpaca_kernel"
+  version: "0.1.8"
+
+source:
+  git_rev: 0.1.8
+  git_url: https://github.com/twhoekstra/alpaca_kernel
+
+requirements:
+  build:
+    - pip
+    - python >= 3.8
+
+  run:
+    - python >= 3.8
+    - matplotlib >= 3.4.3
+    - numpy >= 1.21.2
+    - jupyter >= 1.0.0
+
+
+about:
+  home: https://github.com/twhoekstra/alpaca_kernel
+  license: MIT
+  license_family: MIT
+  summary: Fork of jupyter_micropython_kernel by goatchurchprime

@@ -91,3 +91,14 @@ ENV/
 
 # Rope project settings
 .ropeproject
+linux-32/alpaca_kernel-0.1.7-py39_0.tar.bz2
+linux-64/alpaca_kernel-0.1.7-py39_0.tar.bz2
+linux-aarch64/alpaca_kernel-0.1.7-py39_0.tar.bz2
+linux-armv6l/alpaca_kernel-0.1.7-py39_0.tar.bz2
+linux-armv7l/alpaca_kernel-0.1.7-py39_0.tar.bz2
+linux-ppc64/alpaca_kernel-0.1.7-py39_0.tar.bz2
+linux-ppc64le/alpaca_kernel-0.1.7-py39_0.tar.bz2
+linux-s390x/alpaca_kernel-0.1.7-py39_0.tar.bz2
+osx-64/alpaca_kernel-0.1.7-py39_0.tar.bz2
+osx-arm64/alpaca_kernel-0.1.7-py39_0.tar.bz2
+win-32/alpaca_kernel-0.1.7-py39_0.tar.bz2
