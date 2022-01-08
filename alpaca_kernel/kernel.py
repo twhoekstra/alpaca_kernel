@@ -850,8 +850,15 @@ class ALPACAKernel(Kernel):
                     return None
 
             try:
-                self.yy = np.append(self.yy, [list(data.values())], axis = 0)
-                self.xx = np.append(self.xx, time.time()-self.sresstartedplottime)
+
+                if self.sresliveiteration < 100:
+                    self.yy = np.append(self.yy, [list(data.values())], axis = 0)
+                    self.xx = np.append(self.xx, time.time()-self.sresstartedplottime)
+                else:
+                    self.yy = np.roll(self.yy, -1, axis=0)
+                    self.xx = np.roll(self.xx, -1, axis=0)
+                    self.yy[-1,:] = list(data.values())
+                    self.xx[-1] = time.time()-self.sresstartedplottime
 
                 #self.ax.cla() # Clear
                 for ii, line in enumerate(self.lines):
