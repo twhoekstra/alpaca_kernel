@@ -20,6 +20,6 @@ setuptools.setup(
     install_requires=[
         'matplotlib>=3.4.3',
         'numpy>=1.21.2',
-        'serial'
+        'pyserial'
     ],
 )

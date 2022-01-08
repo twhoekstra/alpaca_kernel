@@ -14,7 +14,7 @@ requirements:
     - python >=3.8
     - matplotlib >=3.4.3
     - numpy >=1.21.2
-    - serial
+    - pyserial
     
 about:
   home: https://github.com/twhoekstra/alpaca_kernel
