@@ -8,7 +8,7 @@ setuptools.setup(
     version='0.1.7',
     author='Thijn Hoekstra',
     author_email='t.w.hoekstra@student.tudelft.nl',
-    description='Fork of jupyter_micropython_kernel  by goatchurchprime',
+    description='Fork of jupyter_micropython_kernel by goatchurchprime',
     long_description=long_description,
     long_description_content_type="text/markdown",
     url='https://github.com/twhoekstra/alpaca_kernel',
@@ -17,5 +17,9 @@ setuptools.setup(
     },
     license='MIT',
     packages=['alpaca_kernel'],
-    install_requires=[],
+    install_requires=[
+        'matplotlib>=3.4.3'
+        'numpy>=1.21.2'
+        'ipykernel>=5.5.5'
+    ],
 )
