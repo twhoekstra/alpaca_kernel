@@ -5,7 +5,7 @@ with open("README.md", "r", encoding="utf-8") as fh:
 
 setuptools.setup(
     name='alpaca_kernel',
-    version='0.1.18',
+    version='0.1.19',
     author='Thijn Hoekstra',
     author_email='t.w.hoekstra@student.tudelft.nl',
     description='Fork of jupyter_micropython_kernel by goatchurchprime',
@@ -18,8 +18,8 @@ setuptools.setup(
     license='MIT',
     packages=['alpaca_kernel'],
     install_requires=[
-        'matplotlib>=3.4.3',
-        'numpy>=1.21.2',
+        'matplotlib',
+        'numpy',
         'pyserial'
     ],
 )
