@@ -1,6 +1,9 @@
-# Jupyter MicroPython Kernel
+# ALPACA Kernel
 
-Jupyter kernel to interact with a MicroPython ESP8266 or ESP32 over its serial REPL.  
+![](msedge_oRfTDroDwi.gif)
+
+
+Jupyter kernel to interact with a MicroPython over its serial REPL.  
 
 Also with capabilities to work through the WEBREPL (available on ESP8266 only), 
 do Ctrl-C, transfer files and esptools flashing (useful for deployment).
@@ -77,7 +80,7 @@ The notebook scans the serial ports (the COM-values in Windows) and tells you th
 
 ## Uploading the MicroPython firmware onto a new board 
 
-This is done using the `esptool.py`.  The Jupyter micropython kernel has features to help you execute this command.  
+This is done using the `esptool.py`.  The ALPACA Kernel has features to help you execute this command.  
 
     %esptool erase
 
@@ -157,7 +160,7 @@ kernel itself to be operating asyncronously with the front end notebook UI.  In 
 if the notebook can independently issue Ctrl-C KeyboardInterrupt signals into the kernel, there is no longer 
 a need to worry about what happens when it hangs waiting for input from a serial connection.  
 
-Other known projects that have implemented a Jupyter Micropython kernel are:
+Other known projects that have implemented a ALPACA Kernel are:
 * https://github.com/adafruit/alpaca_kernel
 * https://github.com/willingc/circuitpython_kernel
 * https://github.com/TDAbboud/mpkernel

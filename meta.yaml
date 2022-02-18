@@ -9,13 +9,13 @@ source:
 requirements:
   build:
     - python
-    - numpy x.x
+    - numpy x.x # [not win]
 
   run:
     - python
-    - matplotlib
-    - numpy x.x
-    - pyserial
+    - matplotlib # [not win]
+    - numpy x.x # [not win]
+    - pyserial # [not win]
     
 about:
   home: https://github.com/twhoekstra/alpaca_kernel
