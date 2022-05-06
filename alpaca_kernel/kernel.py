@@ -259,7 +259,7 @@ def unpack_Thonny_string(output):
 
 class ALPACAKernel(Kernel):
     implementation = 'alpaca_kernel'
-    implementation_version = "v0.3.2"
+    implementation_version = "v0.3.5"
 
     banner = "MicroPython Serializer for ALPACA"
 
