@@ -59,7 +59,7 @@ serialtimeoutcount = 10
 ap_plot = argparse.ArgumentParser(prog="%plot", add_help=False)
 ap_plot.add_argument('--mode', type=str, default='matplotlib')
 ap_plot.add_argument('--trigger_lvl', type=float, default=1.0)
-ap_plot.add_argument('--type', choices=['RISE', 'FALL'], default='RISE')
+ap_plot.add_argument('--type', choices=['RISE', 'FALL'])
 ap_plot.add_argument('--chan', type=int, default=1)
 
 ap_serialconnect = argparse.ArgumentParser(prog="%serialconnect", add_help=False)
@@ -259,7 +259,7 @@ def unpack_Thonny_string(output):
 
 class ALPACAKernel(Kernel):
     implementation = 'alpaca_kernel'
-    implementation_version = "v0.1.19"
+    implementation_version = "v0.1.21"
 
     banner = "MicroPython Serializer for ALPACA"
 
@@ -284,7 +284,7 @@ class ALPACAKernel(Kernel):
         self.sresplotmode = DEFAULT_PLOT_MODE
         self.sres_trigger_lvl = 1.0
         self.sres_trig_RISE = True
-        self.sres_triggered = False
+        self.sres_trig_cldwn = False
         self.sres_trig_chan = 1
         self.sresstartedplot = 0  #
         self.sresliveiteration = 0
@@ -459,11 +459,12 @@ class ALPACAKernel(Kernel):
                 self.sresplotmode = 1  # matplotlib-esque (array) plotting
             elif apargs.mode == 'live':
                 self.sresplotmode = 2  # live plotting
+
+            elif apargs.mode == 'scope':
+                self.sresplotmode = 3  # scope-style
                 self.sres_trigger_lvl = apargs.trigger_lvl
                 self.sres_trig_RISE = True if apargs.type == 'RISE' else False
                 self.sres_trig_chan = apargs.chan
-            elif apargs.mode == 'scope':
-                self.sresplotmode = 3  # scope-style
 
 
             elif apargs.mode == 'none':
@@ -894,18 +895,23 @@ class ALPACAKernel(Kernel):
                 else:
                     data_l = list(data.values())
                     value = data_l[self.sres_trig_chan - 1]
+                    triggered_now = False
                     if self.sres_trig_RISE:
-                        if not self.sres_triggered and value > self.sres_trigger_lvl:
-                            self.sres_triggered = True
-                            self.sresstartedplottime = time.time()
-                        if self.sres_triggered and value < self.sres_trigger_lvl:
-                            self.sres_triggered = False
+                        if not self.sres_trig_cldwn and value > self.sres_trigger_lvl:
+                            triggered_now = True
+                        if self.sres_trig_cldwn and value < self.sres_trigger_lvl:
+                            self.sres_trig_cldwn = False
                     else:
-                        if not self.sres_triggered and value < self.sres_trigger_lvl:
-                            self.sres_triggered = True
-                            self.sresstartedplottime = time.time()
-                        if self.sres_triggered and value > self.sres_trigger_lvl:
-                            self.sres_triggered = False
+                        if not self.sres_trig_cldwn and value < self.sres_trigger_lvl:
+                            triggered_now = True
+                        if self.sres_trig_cldwn and value > self.sres_trigger_lvl:
+                            self.sres_trig_cldwn = False
+
+                    if triggered_now:
+                        self.sres_trig_cldwn = True
+                        self.sresstartedplottime = time.time()
+                        self.yy = np.zeros((0, self.number_lines))
+                        self.xx = np.zeros(0)
 
                     self.yy = np.append(self.yy, [data_l], axis=0)
                     self.xx = np.append(self.xx, time.time() - self.sresstartedplottime)
