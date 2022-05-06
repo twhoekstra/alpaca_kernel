@@ -259,7 +259,7 @@ def unpack_Thonny_string(output):
 
 class ALPACAKernel(Kernel):
     implementation = 'alpaca_kernel'
-    implementation_version = "v0.2.6"
+    implementation_version = "v0.2.7"
 
     banner = "MicroPython Serializer for ALPACA"
 
@@ -916,6 +916,7 @@ class ALPACAKernel(Kernel):
                     if triggered_now:
                         self.sres_has_trig = True
                         self.sres_trig_cldwn = True
+                        self.sresstartedplottime = time.time()
                         self.yy = np.zeros((0, self.number_lines))
                         self.xx = np.zeros(0)
 
