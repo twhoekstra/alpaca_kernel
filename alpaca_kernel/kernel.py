@@ -259,7 +259,7 @@ def unpack_Thonny_string(output):
 
 class ALPACAKernel(Kernel):
     implementation = 'alpaca_kernel'
-    implementation_version = "v0.3.0"
+    implementation_version = "v0.3.1"
 
     banner = "MicroPython Serializer for ALPACA"
 
@@ -879,7 +879,7 @@ class ALPACAKernel(Kernel):
                     self.yy = np.zeros((0, self.number_lines))
                     self.xx = np.zeros(0)
                     # self.lines = self.ax.plot(self.xx, self.yy)
-                    (self.lines,) = self.ax.plot(self.xx, self.yy, animated=True)
+                    self.lines = self.ax.plot(self.xx, self.yy, animated=True)
 
                     for ii, line in enumerate(self.lines):
                         line.set_label(list(data.keys())[ii])
@@ -900,9 +900,10 @@ class ALPACAKernel(Kernel):
                     plt.pause(0.1)
 
                 except Exception as e:
+
                     self.sresstartedplot = 0
                     self.sres(output, n04count=n04count)
-                    logging.debug(e)
+                    logging.exception(e)
                     return None
 
             try:
