@@ -59,7 +59,7 @@ serialtimeoutcount = 10
 ap_plot = argparse.ArgumentParser(prog="%plot", add_help=False)
 ap_plot.add_argument('--mode', type=str, default='matplotlib')
 ap_plot.add_argument('--trigger_lvl', type=float, default=1.0)
-ap_plot.add_argument('--type', choices=['RISE', 'FALL'])
+ap_plot.add_argument('--type', type=str, default='RISE')
 ap_plot.add_argument('--chan', type=int, default=1)
 
 ap_serialconnect = argparse.ArgumentParser(prog="%serialconnect", add_help=False)
@@ -259,7 +259,7 @@ def unpack_Thonny_string(output):
 
 class ALPACAKernel(Kernel):
     implementation = 'alpaca_kernel'
-    implementation_version = "v0.2.1"
+    implementation_version = "v0.2.2"
 
     banner = "MicroPython Serializer for ALPACA"
 
@@ -930,18 +930,19 @@ class ALPACAKernel(Kernel):
                     self.ax.set_xlim(xx_minimum - xx_edge_size, xx_maximum + xx_edge_size)
                 # self.ax.plot(self.xx, self.yy, label =  # Plot
 
-
-                if self.sresliveiteration:
-                    self.sendPLOT(update_id=self.plot_uuid)  # Use old plot and display
-                else:
-                    self.plot_uuid = self.sendPLOT()  # Create new plot and store UUID
-
                 if triggered_now:
                     self.sres_has_trig = True
                     self.sres_trig_cldwn = True
                     self.sresstartedplottime = time.time()
                     self.yy = np.zeros((0, self.number_lines))
                     self.xx = np.zeros(0)
+
+                if self.sresliveiteration:
+                    self.sendPLOT(update_id=self.plot_uuid)  # Use old plot and display
+                else:
+                    self.plot_uuid = self.sendPLOT()  # Create new plot and store UUID
+
+
 
                 self.sresliveiteration += 1
             except Exception:
