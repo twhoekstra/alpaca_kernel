@@ -259,7 +259,7 @@ def unpack_Thonny_string(output):
 
 class ALPACAKernel(Kernel):
     implementation = 'alpaca_kernel'
-    implementation_version = "v0.2.7"
+    implementation_version = "v0.3.5"
 
     banner = "MicroPython Serializer for ALPACA"
 
@@ -878,16 +878,34 @@ class ALPACAKernel(Kernel):
 
                     self.yy = np.zeros((0, self.number_lines))
                     self.xx = np.zeros(0)
-                    self.lines = self.ax.plot(self.xx, self.yy)
+                    # self.lines = self.ax.plot(self.xx, self.yy)
+                    self.lines = self.ax.plot(self.xx, self.yy, animated=True)
+
+                    plt.show(block=False)
+                    plt.pause(0.1)
+
                     for ii, line in enumerate(self.lines):
                         line.set_label(list(data.keys())[ii])
+
+                    # get copy of entire figure (everything inside fig.bbox) sans animated artist
+                    bg = self.fig.canvas.copy_from_bbox(self.fig.bbox)
+                    # draw the animated artist, this uses a cached renderer
+                    self.ax.draw_artist(self.lines)
+                    # show the result to the screen, this pushes the updated RGBA buffer from the
+                    # renderer to the GUI framework so you can see it
+                    self.fig.canvas.blit(self.fig.bbox)
 
                     self.ax.legend(loc='upper center', ncol=3)
                     self.ax.grid()
                     self.ax.set_xlabel("Time [s]")
-                except Exception:
+
+
+
+                except Exception as e:
+
                     self.sresstartedplot = 0
                     self.sres(output, n04count=n04count)
+                    logging.exception(e)
                     return None
 
             try:
@@ -923,27 +941,31 @@ class ALPACAKernel(Kernel):
                     self.yy = np.append(self.yy, [data_l], axis=0)
                     self.xx = np.append(self.xx, time.time() - self.sresstartedplottime)
 
-                # self.ax.cla() # Clear
-                for ii, line in enumerate(self.lines):
-                    line.set_xdata(self.xx)
-                    line.set_ydata(self.yy[:, ii])
-
                 # self.ax.autoscale()
                 yy_minimum = np.amin(self.yy)
                 yy_maximum = np.amax(self.yy)
                 xx_minimum = np.amin(self.xx)
                 xx_maximum = np.amax(self.xx)
                 if self.sresplotmode == 2:
+
+                    # Redraws entire image, slow but fine
+
                     yy_edge_size = (yy_maximum - yy_minimum) / 10
                     xx_edge_size = (xx_maximum - xx_minimum) / 10
 
                     self.ax.set_ylim(yy_minimum - yy_edge_size, yy_maximum + yy_edge_size * 2)  # Extra space for legend
                     self.ax.set_xlim(xx_minimum - xx_edge_size, xx_maximum + xx_edge_size)
+
+                    # Remake cache
+                    bg = self.fig.canvas.copy_from_bbox(self.fig.bbox)
                 else:
                     if ((yy_minimum < self.yy_minimum)
                             or (yy_maximum > self.yy_maximum)
                             or (xx_minimum < self.xx_minimum)
                             or (xx_maximum > self.xx_maximum)):
+
+                        # Have to redraw image, slow but fine
+
                         self.yy_minimum = min(yy_minimum, self.yy_minimum)
                         self.yy_maximum = max(yy_maximum, self.yy_maximum)
                         self.xx_minimum = min(xx_minimum, self.xx_minimum)
@@ -955,7 +977,20 @@ class ALPACAKernel(Kernel):
                         self.ax.set_ylim(self.yy_minimum - yy_edge_size,
                                          self.yy_maximum + yy_edge_size * 2)  # Extra space for legend
                         self.ax.set_xlim(self.xx_minimum - xx_edge_size, self.xx_maximum + xx_edge_size)
-                # self.ax.plot(self.xx, self.yy, label =  # Plot
+
+                        # Remake cache
+                        bg = self.fig.canvas.copy_from_bbox(self.fig.bbox)
+                    else:
+                        # Can use old background
+                        pass
+
+                self.fig.canvas.restore_region(bg)
+                for ii, line in enumerate(self.lines):
+                    line.set_xdata(self.xx)
+                    line.set_ydata(self.yy[:, ii])
+                    self.ax.draw_artist(line)
+
+                # self.fig.canvas.blit(self.fig.bbox)
 
                 if self.sresliveiteration:
                     self.sendPLOT(update_id=self.plot_uuid)  # Use old plot and display
@@ -963,8 +998,9 @@ class ALPACAKernel(Kernel):
                     self.plot_uuid = self.sendPLOT()  # Create new plot and store UUID
 
                 self.sresliveiteration += 1
-            except Exception:
+            except Exception as e:
                 self.sres(output, n04count=n04count)
+                logging.debug(e)
                 return None
             return None
 
