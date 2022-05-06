@@ -259,7 +259,7 @@ def unpack_Thonny_string(output):
 
 class ALPACAKernel(Kernel):
     implementation = 'alpaca_kernel'
-    implementation_version = "v0.2.2"
+    implementation_version = "v0.2.3"
 
     banner = "MicroPython Serializer for ALPACA"
 
@@ -936,6 +936,7 @@ class ALPACAKernel(Kernel):
                     self.sresstartedplottime = time.time()
                     self.yy = np.zeros((0, self.number_lines))
                     self.xx = np.zeros(0)
+                    triggered_now = False
 
                 if self.sresliveiteration:
                     self.sendPLOT(update_id=self.plot_uuid)  # Use old plot and display
