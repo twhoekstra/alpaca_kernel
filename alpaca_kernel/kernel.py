@@ -259,7 +259,7 @@ def unpack_Thonny_string(output):
 
 class ALPACAKernel(Kernel):
     implementation = 'alpaca_kernel'
-    implementation_version = "v0.1.21"
+    implementation_version = "v0.1.22"
 
     banner = "MicroPython Serializer for ALPACA"
 
@@ -285,6 +285,7 @@ class ALPACAKernel(Kernel):
         self.sres_trigger_lvl = 1.0
         self.sres_trig_RISE = True
         self.sres_trig_cldwn = False
+        self.sres_has_trig = False
         self.sres_trig_chan = 1
         self.sresstartedplot = 0  #
         self.sresliveiteration = 0
@@ -907,12 +908,6 @@ class ALPACAKernel(Kernel):
                         if self.sres_trig_cldwn and value > self.sres_trigger_lvl:
                             self.sres_trig_cldwn = False
 
-                    if triggered_now:
-                        self.sres_trig_cldwn = True
-                        self.sresstartedplottime = time.time()
-                        self.yy = np.zeros((0, self.number_lines))
-                        self.xx = np.zeros(0)
-
                     self.yy = np.append(self.yy, [data_l], axis=0)
                     self.xx = np.append(self.xx, time.time() - self.sresstartedplottime)
 
@@ -922,22 +917,31 @@ class ALPACAKernel(Kernel):
                     line.set_ydata(self.yy[:, ii])
 
                 # self.ax.autoscale()
-                yy_minimum = np.amin(self.yy)
-                yy_maximum = np.amax(self.yy)
-                yy_edge_size = (yy_maximum - yy_minimum) / 10
+                if not self.sres_has_trig:
+                    yy_minimum = np.amin(self.yy)
+                    yy_maximum = np.amax(self.yy)
+                    yy_edge_size = (yy_maximum - yy_minimum) / 10
 
-                xx_minimum = np.amin(self.xx)
-                xx_maximum = np.amax(self.xx)
-                xx_edge_size = (xx_maximum - xx_minimum) / 10
+                    xx_minimum = np.amin(self.xx)
+                    xx_maximum = np.amax(self.xx)
+                    xx_edge_size = (xx_maximum - xx_minimum) / 10
 
-                self.ax.set_ylim(yy_minimum - yy_edge_size, yy_maximum + yy_edge_size * 2)  # Extra space for legend
-                self.ax.set_xlim(xx_minimum - xx_edge_size, xx_maximum + xx_edge_size)
+                    self.ax.set_ylim(yy_minimum - yy_edge_size, yy_maximum + yy_edge_size * 2)  # Extra space for legend
+                    self.ax.set_xlim(xx_minimum - xx_edge_size, xx_maximum + xx_edge_size)
                 # self.ax.plot(self.xx, self.yy, label =  # Plot
+
 
                 if self.sresliveiteration:
                     self.sendPLOT(update_id=self.plot_uuid)  # Use old plot and display
                 else:
                     self.plot_uuid = self.sendPLOT()  # Create new plot and store UUID
+
+                if triggered_now:
+                    self.sres_has_trig = True
+                    self.sres_trig_cldwn = True
+                    self.sresstartedplottime = time.time()
+                    self.yy = np.zeros((0, self.number_lines))
+                    self.xx = np.zeros(0)
 
                 self.sresliveiteration += 1
             except Exception:
