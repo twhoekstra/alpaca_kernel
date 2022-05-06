@@ -259,7 +259,7 @@ def unpack_Thonny_string(output):
 
 class ALPACAKernel(Kernel):
     implementation = 'alpaca_kernel'
-    implementation_version = "v0.2.5"
+    implementation_version = "v0.2.6"
 
     banner = "MicroPython Serializer for ALPACA"
 
@@ -916,7 +916,6 @@ class ALPACAKernel(Kernel):
                     if triggered_now:
                         self.sres_has_trig = True
                         self.sres_trig_cldwn = True
-                        self.sresstartedplottime = time.time()
                         self.yy = np.zeros((0, self.number_lines))
                         self.xx = np.zeros(0)
 
@@ -933,20 +932,28 @@ class ALPACAKernel(Kernel):
                 yy_maximum = np.amax(self.yy)
                 xx_minimum = np.amin(self.xx)
                 xx_maximum = np.amax(self.xx)
-                if ((yy_minimum < self.yy_minimum)
-                        or (yy_maximum > self.yy_maximum)
-                        or (xx_minimum < self.xx_minimum)
-                        or (xx_maximum > self.xx_maximum)):
-                    self.yy_minimum = min(yy_minimum, self.yy_minimum)
-                    self.yy_maximum = max(yy_maximum, self.yy_maximum)
-                    self.xx_minimum = min(xx_minimum, self.xx_minimum)
-                    self.xx_maximum = max(xx_maximum, self.xx_maximum)
-
+                if self.sresplotmode == 2:
                     yy_edge_size = (yy_maximum - yy_minimum) / 10
                     xx_edge_size = (xx_maximum - xx_minimum) / 10
 
                     self.ax.set_ylim(yy_minimum - yy_edge_size, yy_maximum + yy_edge_size * 2)  # Extra space for legend
                     self.ax.set_xlim(xx_minimum - xx_edge_size, xx_maximum + xx_edge_size)
+                else:
+                    if ((yy_minimum < self.yy_minimum)
+                            or (yy_maximum > self.yy_maximum)
+                            or (xx_minimum < self.xx_minimum)
+                            or (xx_maximum > self.xx_maximum)):
+                        self.yy_minimum = min(yy_minimum, self.yy_minimum)
+                        self.yy_maximum = max(yy_maximum, self.yy_maximum)
+                        self.xx_minimum = min(xx_minimum, self.xx_minimum)
+                        self.xx_maximum = max(xx_maximum, self.xx_maximum)
+
+                        yy_edge_size = (self.yy_maximum - self.yy_minimum) / 10
+                        xx_edge_size = (self.xx_maximum - self.xx_minimum) / 10
+
+                        self.ax.set_ylim(self.yy_minimum - yy_edge_size,
+                                         self.yy_maximum + yy_edge_size * 2)  # Extra space for legend
+                        self.ax.set_xlim(self.xx_minimum - xx_edge_size, self.xx_maximum + xx_edge_size)
                 # self.ax.plot(self.xx, self.yy, label =  # Plot
 
                 if self.sresliveiteration:
