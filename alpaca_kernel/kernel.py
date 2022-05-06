@@ -259,7 +259,7 @@ def unpack_Thonny_string(output):
 
 class ALPACAKernel(Kernel):
     implementation = 'alpaca_kernel'
-    implementation_version = "v0.2.8"
+    implementation_version = "v0.2.9"
 
     banner = "MicroPython Serializer for ALPACA"
 
@@ -998,8 +998,9 @@ class ALPACAKernel(Kernel):
                     self.plot_uuid = self.sendPLOT()  # Create new plot and store UUID
 
                 self.sresliveiteration += 1
-            except Exception:
+            except Exception as e:
                 self.sres(output, n04count=n04count)
+                logging.debug(e)
                 return None
             return None
 
