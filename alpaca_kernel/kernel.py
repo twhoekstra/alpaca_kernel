@@ -259,7 +259,7 @@ def unpack_Thonny_string(output):
 
 class ALPACAKernel(Kernel):
     implementation = 'alpaca_kernel'
-    implementation_version = "v0.2.9"
+    implementation_version = "v0.3.0"
 
     banner = "MicroPython Serializer for ALPACA"
 
@@ -879,8 +879,7 @@ class ALPACAKernel(Kernel):
                     self.yy = np.zeros((0, self.number_lines))
                     self.xx = np.zeros(0)
                     # self.lines = self.ax.plot(self.xx, self.yy)
-                    (self.lines, ) = self.ax.plot(self.xx, self.yy, animated=True)
-
+                    (self.lines,) = self.ax.plot(self.xx, self.yy, animated=True)
 
                     for ii, line in enumerate(self.lines):
                         line.set_label(list(data.keys())[ii])
@@ -900,10 +899,10 @@ class ALPACAKernel(Kernel):
                     plt.show(block=False)
                     plt.pause(0.1)
 
-
-                except Exception:
+                except Exception as e:
                     self.sresstartedplot = 0
                     self.sres(output, n04count=n04count)
+                    logging.debug(e)
                     return None
 
             try:
@@ -939,7 +938,6 @@ class ALPACAKernel(Kernel):
                     self.yy = np.append(self.yy, [data_l], axis=0)
                     self.xx = np.append(self.xx, time.time() - self.sresstartedplottime)
 
-
                 # self.ax.autoscale()
                 yy_minimum = np.amin(self.yy)
                 yy_maximum = np.amax(self.yy)
@@ -964,7 +962,6 @@ class ALPACAKernel(Kernel):
                             or (xx_maximum > self.xx_maximum)):
 
                         # Have to redraw image, slow but fine
-
 
                         self.yy_minimum = min(yy_minimum, self.yy_minimum)
                         self.yy_maximum = max(yy_maximum, self.yy_maximum)
