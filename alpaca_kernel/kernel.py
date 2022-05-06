@@ -13,8 +13,8 @@ import urllib
 import uuid
 from io import BytesIO
 
-import argparse # use of argparse for handling the %commands in the cells
-import shlex # use of shlex for handling the %commands in the cells
+import argparse  # use of argparse for handling the %commands in the cells
+import shlex  # use of shlex for handling the %commands in the cells
 import IPython
 import matplotlib.pyplot as plt
 import numpy as np
@@ -29,26 +29,26 @@ logger = logging.getLogger(__name__)
 logger.setLevel(logging.INFO)
 
 # --------------------- Plotting settings ----------------------------
-DEFAULT_PLOT_MODE = 1 # 0 = no plot, 1 = matplotlib plot, 2 = live plot
+DEFAULT_PLOT_MODE = 1  # 0 = no plot, 1 = matplotlib plot, 2 = live plot, 3 scope
 
 # --------- Constants for plotting in matplotlib style ---------------
 # Format for string is {dictionary of settings}[[x axis], [y axis]]
-VALID_KEYS = ['color','linestyle','linewidth', 'marker', 'label']
+VALID_KEYS = ['color', 'linestyle', 'linewidth', 'marker', 'label']
 # Format for attribute is ATTRIBUTE_PREFIXattribute(parameters)
 
-VALID_ATTRIBUTES = {'legend' : 'legend',
-                    'axhline' : 'axhline',
-                    'axvline' : 'axvline', 
-                    'hlines' : 'hlines',
-                    'vlines' : 'vlines',
-                    'grid' : 'grid',
-                    'xlim' : 'set_xlim',
-                    'ylim' : 'set_ylim',
-                    'xlabel' : 'set_xlabel',
-                    'ylabel' : 'set_ylabel',
-                    'title' : 'set_title'} 
-                    # Key: accepted input, Value: function to run as ouput
-ATTRIBUTE_PREFIX = '%matplotlib --' # Prefix to recognize attribute
+VALID_ATTRIBUTES = {'legend': 'legend',
+                    'axhline': 'axhline',
+                    'axvline': 'axvline',
+                    'hlines': 'hlines',
+                    'vlines': 'vlines',
+                    'grid': 'grid',
+                    'xlim': 'set_xlim',
+                    'ylim': 'set_ylim',
+                    'xlabel': 'set_xlabel',
+                    'ylabel': 'set_ylabel',
+                    'title': 'set_title'}
+# Key: accepted input, Value: function to run as ouput
+ATTRIBUTE_PREFIX = '%matplotlib --'  # Prefix to recognize attribute
 PLOT_PREFIX = '%matplotlibdata --'
 
 # --------------------------------------------------------------------
@@ -56,10 +56,11 @@ PLOT_PREFIX = '%matplotlibdata --'
 serialtimeout = 0.5
 serialtimeoutcount = 10
 
-
-
 ap_plot = argparse.ArgumentParser(prog="%plot", add_help=False)
-ap_plot.add_argument('--mode', type=str, default = 'matplotlib')
+ap_plot.add_argument('--mode', type=str, default='matplotlib')
+ap_plot.add_argument('--trigger_lvl', type=float, default=1.0)
+ap_plot.add_argument('--type', choices=['RISE', 'FALL'], default='RISE')
+ap_plot.add_argument('--chan', type=int, default=1)
 
 ap_serialconnect = argparse.ArgumentParser(prog="%serialconnect", add_help=False)
 ap_serialconnect.add_argument('--raw', help='Just open connection', action='store_true')
@@ -89,7 +90,8 @@ ap_writebytes.add_argument('stringtosend', type=str)
 ap_readbytes = argparse.ArgumentParser(prog="%readbytes", add_help=False)
 ap_readbytes.add_argument('--binary', '-b', action='store_true')
 
-ap_sendtofile = argparse.ArgumentParser(prog="%sendtofile", description="send a file to the microcontroller's file system", add_help=False)
+ap_sendtofile = argparse.ArgumentParser(prog="%sendtofile",
+                                        description="send a file to the microcontroller's file system", add_help=False)
 ap_sendtofile.add_argument('--append', '-a', action='store_true')
 ap_sendtofile.add_argument('--mkdir', '-d', action='store_true')
 ap_sendtofile.add_argument('--binary', '-b', action='store_true')
@@ -99,11 +101,14 @@ ap_sendtofile.add_argument('--quiet', '-q', action='store_true')
 ap_sendtofile.add_argument('--QUIET', '-Q', action='store_true')
 ap_sendtofile.add_argument('destinationfilename', type=str, nargs="?")
 
-ap_ls = argparse.ArgumentParser(prog="%ls", description="list directory of the microcontroller's file system", add_help=False)
+ap_ls = argparse.ArgumentParser(prog="%ls", description="list directory of the microcontroller's file system",
+                                add_help=False)
 ap_ls.add_argument('--recurse', '-r', action='store_true')
 ap_ls.add_argument('dirname', type=str, nargs="?")
 
-ap_fetchfile = argparse.ArgumentParser(prog="%fetchfile", description="fetch a file from the microcontroller's file system", add_help=False)
+ap_fetchfile = argparse.ArgumentParser(prog="%fetchfile",
+                                       description="fetch a file from the microcontroller's file system",
+                                       add_help=False)
 ap_fetchfile.add_argument('--binary', '-b', action='store_true')
 ap_fetchfile.add_argument('--print', '-p', action="store_true")
 ap_fetchfile.add_argument('--load', '-l', action="store_true")
@@ -121,12 +126,14 @@ ap_esptool.add_argument('--port', type=str, default=0)
 ap_esptool.add_argument('espcommand', choices=['erase', 'esp32', 'esp8266'])
 ap_esptool.add_argument('binfile', type=str, nargs="?")
 
-ap_capture = argparse.ArgumentParser(prog="%capture", description="capture output printed by device and save to a file", add_help=False)
+ap_capture = argparse.ArgumentParser(prog="%capture", description="capture output printed by device and save to a file",
+                                     add_help=False)
 ap_capture.add_argument('--quiet', '-q', action='store_true')
 ap_capture.add_argument('--QUIET', '-Q', action='store_true')
 ap_capture.add_argument('outputfilename', type=str)
 
-ap_writefilepc = argparse.ArgumentParser(prog="%%writefile", description="write contents of cell to file on PC", add_help=False)
+ap_writefilepc = argparse.ArgumentParser(prog="%%writefile", description="write contents of cell to file on PC",
+                                         add_help=False)
 ap_writefilepc.add_argument('--append', '-a', action='store_true')
 ap_writefilepc.add_argument('--execute', '-x', action='store_true')
 ap_writefilepc.add_argument('destinationfilename', type=str)
@@ -137,6 +144,7 @@ def parseap(ap, percentstringargs1):
         return ap.parse_known_args(percentstringargs1)[0]
     except SystemExit:  # argparse throws these because it assumes you only want to do the command line
         return None  # should be a default one
+
 
 ### HELPER FUNCTIONS ###s
 
@@ -149,13 +157,14 @@ def _to_png(fig):
     return urllib.parse.quote(
         base64.b64encode(imgdata.getvalue()))
 
+
 def string_to_numpy(string):
     line_Items = []
     width = None
     for line in string.split("],"):
         line_Parts = line.split()
         n = len(line_Parts)
-        if n==0:
+        if n == 0:
             continue
         if width is None:
             width = n
@@ -166,18 +175,19 @@ def string_to_numpy(string):
         line_Items.append(np.fromstring(line, dtype=float, sep=','))
     return np.array(line_Items)
 
+
 def string_is_array(string):
     if string.count('[') != string.count(']'):
         return False
-    if sum(cc.isalpha() for cc in string) > 0: # cant contain alphanumerics
+    if sum(cc.isalpha() for cc in string) > 0:  # cant contain alphanumerics
         return False
 
     number_of_numbers = 0
     number_flag = False
     for cc in string:
-        if cc.isnumeric() and not number_flag: # recognize start of number
+        if cc.isnumeric() and not number_flag:  # recognize start of number
             number_flag = True
-        if number_flag and cc in [']',',']: # recognize end of number
+        if number_flag and cc in [']', ',']:  # recognize end of number
             number_flag = False
             number_of_numbers += 1
 
@@ -185,6 +195,7 @@ def string_is_array(string):
         return False
 
     return True
+
 
 def unpack_Thonny_string(output):
     ii_label_start = 0
@@ -195,16 +206,16 @@ def unpack_Thonny_string(output):
     number_flag = False
     for ii, cc in enumerate(output):
         # Previous end is new start
-        if cc.isnumeric() and output[ii-1] == ' ' and not number_flag: # recognize start of number
-                number_flag = True
-                ii_number_start = ii
+        if cc.isnumeric() and output[ii - 1] == ' ' and not number_flag:  # recognize start of number
+            number_flag = True
+            ii_number_start = ii
 
-        at_end = ii == len(output)-1
-        if number_flag and (cc in [' '] or at_end): # recognize end of number
+        at_end = ii == len(output) - 1
+        if number_flag and (cc in [' '] or at_end):  # recognize end of number
             ii_number_end = ii
 
             if at_end:
-                ii_number_end = ii+1
+                ii_number_end = ii + 1
 
             print(ii_label_start, ii_number_start, ii_number_end)
             label = output[ii_label_start:ii_number_start].split(':')[0]
@@ -259,17 +270,23 @@ class ALPACAKernel(Kernel):
 
     def __init__(self, **kwargs):
         Kernel.__init__(self, **kwargs)
+
+
         self.silent = False
         self.dc = deviceconnector.DeviceConnector(self.sres, self.sresSYS, self.sresPLOT)
         self.mpycrossexe = None
 
-        self.srescapturemode = 0            # 0 none, 1 print lines, 2 print on-going line count (--quiet), 3 print only final line count (--QUIET)
+        self.srescapturemode = 0  # 0 none, 1 print lines, 2 print on-going line count (--quiet), 3 print only final line count (--QUIET)
         self.srescapturedoutputfile = None  # used by %capture command
         self.srescapturedlinecount = 0
-        self.srescapturedlasttime = 0       # to control the frequency of capturing reported
+        self.srescapturedlasttime = 0  # to control the frequency of capturing reported
 
         self.sresplotmode = DEFAULT_PLOT_MODE
-        self.sresstartedplot = 0 #
+        self.sres_trigger_lvl = 1.0
+        self.sres_trig_RISE = True
+        self.sres_triggered = False
+        self.sres_trig_chan = 1
+        self.sresstartedplot = 0  #
         self.sresliveiteration = 0
 
     def interpretpercentline(self, percentline, cellcontents):
@@ -337,7 +354,7 @@ class ALPACAKernel(Kernel):
                 if apargs.verbose:
                     self.sres(str(self.dc.workingsocket))
                 self.sres("\n")
-                #if not apargs.raw:
+                # if not apargs.raw:
                 #    self.dc.enterpastemode()
             return cellcontents.strip() and cellcontents or None
 
@@ -347,7 +364,8 @@ class ALPACAKernel(Kernel):
                 self.dc.esptool(apargs.espcommand, apargs.port, apargs.binfile)
             else:
                 self.sres(ap_esptool.format_help())
-                self.sres("Please download the bin file from https://micropython.org/download/#{}".format(apargs.espcommand if apargs else ""))
+                self.sres("Please download the bin file from https://micropython.org/download/#{}".format(
+                    apargs.espcommand if apargs else ""))
             return cellcontents.strip() and cellcontents or None
 
         if percentcommand == ap_writefilepc.prog:
@@ -367,7 +385,7 @@ class ALPACAKernel(Kernel):
                 self.sres(ap_writefilepc.format_help())
             if not apargs.execute:
                 return None
-            return cellcontents # should add in some blank lines at top to get errors right
+            return cellcontents  # should add in some blank lines at top to get errors right
 
         if percentcommand == "%mpy-cross":
             apargs = parseap(ap_mpycross, percentstringargs[1:])
@@ -378,7 +396,8 @@ class ALPACAKernel(Kernel):
                     self.dc.mpycross(self.mpycrossexe, apargs.pyfile)
                 else:
                     self.sres("Cross compiler executable not yet set\n", 31)
-                    self.sres("try: %mpy-cross --set-exe /home/julian/extrepositories/micropython/mpy-cross/mpy-cross\n")
+                    self.sres(
+                        "try: %mpy-cross --set-exe /home/julian/extrepositories/micropython/mpy-cross/mpy-cross\n")
                 if self.mpycrossexe:
                     self.mpycrossexe = "/home/julian/extrepositories/micropython/mpy-cross/mpy-cross"
             else:
@@ -437,11 +456,18 @@ class ALPACAKernel(Kernel):
         if percentcommand == ap_plot.prog:
             apargs = parseap(ap_plot, percentstringargs[1:])
             if apargs.mode == 'matplotlib':
-                self.sresplotmode = 1 # matplotlib-esque (array) plotting
+                self.sresplotmode = 1  # matplotlib-esque (array) plotting
             elif apargs.mode == 'live':
-                self.sresplotmode = 2 # live plotting
+                self.sresplotmode = 2  # live plotting
+                self.sres_trigger_lvl = apargs.trigger_lvl
+                self.sres_trig_RISE = True if apargs.type == 'RISE' else False
+                self.sres_trig_chan = apargs.chan
+            elif apargs.mode == 'scope':
+                self.sresplotmode = 3  # scope-style
+
+
             elif apargs.mode == 'none':
-                self.sresplotmode = 0 
+                self.sresplotmode = 0
             else:
                 self.sresplotmode = DEFAULT_PLOT_MODE
             return cellcontents
@@ -456,8 +482,6 @@ class ALPACAKernel(Kernel):
             else:
                 self.sres(ap_capture.format_help())
             return cellcontents
-
-
 
         if percentcommand == ap_writebytes.prog:
             # (not effectively using the --binary setting)
@@ -474,14 +498,15 @@ class ALPACAKernel(Kernel):
         if percentcommand == ap_readbytes.prog:
             # (not effectively using the --binary setting)
             apargs = parseap(ap_readbytes, percentstringargs[1:])
-            time.sleep(0.1)   # just give it a moment if running on from a series of values (could use an --expect keyword)
+            time.sleep(
+                0.1)  # just give it a moment if running on from a series of values (could use an --expect keyword)
             l = self.dc.workingserialreadall()
             if apargs.binary:
                 self.sres(repr(l))
             elif type(l) == bytes:
                 self.sres(l.decode(errors="ignore"))
             else:
-                self.sres(l)   # strings come back from webrepl
+                self.sres(l)  # strings come back from webrepl
             return cellcontents.strip() and cellcontents or None
 
         if percentcommand == "%rebootdevice":
@@ -522,7 +547,8 @@ class ALPACAKernel(Kernel):
             if apargs:
                 fetchedcontents = self.dc.fetchfile(apargs.sourcefilename, apargs.binary, apargs.quiet)
                 if apargs.print:
-                    self.sres(fetchedcontents.decode() if type(fetchedcontents)==bytes else fetchedcontents, clear_output=True)
+                    self.sres(fetchedcontents.decode() if type(fetchedcontents) == bytes else fetchedcontents,
+                              clear_output=True)
 
                 if (apargs.destinationfilename or (not apargs.print and not apargs.load)) and fetchedcontents:
                     dstfile = apargs.destinationfilename or os.path.basename(apargs.sourcefilename)
@@ -532,10 +558,10 @@ class ALPACAKernel(Kernel):
                     fout.close()
 
                 if apargs.load:
-                    fcontents = fetchedcontents.decode() if type(fetchedcontents)==bytes else fetchedcontents
+                    fcontents = fetchedcontents.decode() if type(fetchedcontents) == bytes else fetchedcontents
                     if not apargs.quiet:
                         fcontents = "#%s\n\n%s" % (" ".join(percentstringargs), fcontents)
-                    set_next_input_payload = { "source": "set_next_input", "text":fcontents, "replace": True }
+                    set_next_input_payload = {"source": "set_next_input", "text": fcontents, "replace": True}
                     return set_next_input_payload
 
             else:
@@ -550,12 +576,13 @@ class ALPACAKernel(Kernel):
                 self.sres(ap_ls.format_help())
             return None
 
-
         if percentcommand == ap_sendtofile.prog:
             apargs = parseap(ap_sendtofile, percentstringargs[1:])
-            if apargs and not (apargs.source == "<<cellcontents>>" and not apargs.destinationfilename) and (apargs.source != None):
+            if apargs and not (apargs.source == "<<cellcontents>>" and not apargs.destinationfilename) and (
+                    apargs.source != None):
 
                 destfn = apargs.destinationfilename
+
                 def sendtofile(filename, contents):
                     self.dc.sendtofile(filename, apargs.mkdir, apargs.append, apargs.binary, apargs.quiet, contents)
 
@@ -596,8 +623,7 @@ class ALPACAKernel(Kernel):
                                     sendtofile(destpath, filecontents)
             else:
                 self.sres(ap_sendtofile.format_help())
-            return cellcontents   # allows for repeat %sendtofile in same cell
-
+            return cellcontents  # allows for repeat %sendtofile in same cell
 
         self.sres("Unrecognized percentline {}\n".format([percentline]), 31)
         return cellcontents
@@ -621,20 +647,19 @@ class ALPACAKernel(Kernel):
                     self.sres('[duringwriting] ')
                     self.sres(str(r))
 
-                    #if self.sresplotmode == 1:
+                    # if self.sresplotmode == 1:
                     #    self.sres('Plotting ON')
                     #    self.sresPLOT(str(r))
 
-
         if not bsuppressendcode:
             self.dc.writebytes(b'\r\x04')
-            self.dc.receivestream(bseekokay=True, isplotting = self.sresplotmode)
+            self.dc.receivestream(bseekokay=True, isplotting=self.sresplotmode)
 
     def sendcommand(self, cellcontents):
         bsuppressendcode = False  # can't yet see how to get this signal through
 
         if self.srescapturedoutputfile:
-            self.srescapturedoutputfile.close()   # shouldn't normally get here
+            self.srescapturedoutputfile.close()  # shouldn't normally get here
             self.sres("closing stuck open srescapturedoutputfile\n")
             self.srescapturedoutputfile = None
 
@@ -643,9 +668,10 @@ class ALPACAKernel(Kernel):
             mpercentline = re.match("(?:(?:\s*|(?:\s*#.*\n))*)(%.*)\n?(?:[ \r]*\n)?", cellcontents)
             if not mpercentline:
                 break
-            cellcontents = self.interpretpercentline(mpercentline.group(1), cellcontents[mpercentline.end():])   # discards the %command and a single blank line (if there is one) from the cell contents
+            cellcontents = self.interpretpercentline(mpercentline.group(1), cellcontents[
+                                                                            mpercentline.end():])  # discards the %command and a single blank line (if there is one) from the cell contents
             if isinstance(cellcontents, dict) and cellcontents.get("source") == "set_next_input":
-                return cellcontents # set_next_input_payload:
+                return cellcontents  # set_next_input_payload:
             if cellcontents is None:
                 return None
 
@@ -661,8 +687,9 @@ class ALPACAKernel(Kernel):
             self.runnormalcell(cellcontents, bsuppressendcode)
         return None
 
-    def sresSYS(self, output, clear_output=False):   # system call
+    def sresSYS(self, output, clear_output=False):  # system call
         self.sres(output, asciigraphicscode=34, clear_output=clear_output)
+
     # 1=bold, 31=red, 32=green, 34=blue; from http://ascii-table.com/ansi-escape-sequences.php
     def sres(self, output, asciigraphicscode=None, n04count=0, clear_output=False):
         if self.silent:
@@ -670,72 +697,72 @@ class ALPACAKernel(Kernel):
 
         if self.srescapturedoutputfile and (n04count == 0) and not asciigraphicscode:
             self.srescapturedoutputfile.write(output)
-            self.srescapturedlinecount += len(output.split("\n"))-1
-            if self.srescapturemode == 3:            # 0 none, 1 print lines, 2 print on-going line count (--quiet), 3 print only final line count (--QUIET)
+            self.srescapturedlinecount += len(output.split("\n")) - 1
+            if self.srescapturemode == 3:  # 0 none, 1 print lines, 2 print on-going line count (--quiet), 3 print only final line count (--QUIET)
                 return
 
             # changes the printing out to a lines captured statement every 1second.
             if self.srescapturemode == 2:  # (allow stderrors to drop through to normal printing
                 srescapturedtime = time.time()
-                if srescapturedtime < self.srescapturedlasttime + 1:   # update no more frequently than once a second
+                if srescapturedtime < self.srescapturedlasttime + 1:  # update no more frequently than once a second
                     return
                 self.srescapturedlasttime = srescapturedtime
                 clear_output = True
                 output = "{} lines captured".format(self.srescapturedlinecount)
 
         if clear_output:  # used when updating lines printed
-            self.send_response(self.iopub_socket, 'clear_output', {"wait":True})
+            self.send_response(self.iopub_socket, 'clear_output', {"wait": True})
         if asciigraphicscode:
             output = "\x1b[{}m{}\x1b[0m".format(asciigraphicscode, output)
-        
-        stream_content = {'name': ("stdout" if n04count == 0 else "stderr"), 'text': output }
-        
+
+        stream_content = {'name': ("stdout" if n04count == 0 else "stderr"), 'text': output}
+
         self.send_response(self.iopub_socket, 'stream', stream_content)
-        
+
     def sresPLOT(self, output: str, asciigraphicscode=None, n04count=0, clear_output=False):
-        #logging.debug(output)
+        # logging.debug(output)
         if self.silent:
             return
 
-        #if output is None or output == '':
+        # if output is None or output == '':
         #    return
 
-        if self.sresplotmode == 0: # Plotting on but no plot commands used in code
+        if self.sresplotmode == 0:  # Plotting on but no plot commands used in code
             self.sres(output, n04count=n04count)
             return
 
-        if self.sresplotmode == 1: # matplotlib-esque (array) plotting
-            
+        if self.sresplotmode == 1:  # matplotlib-esque (array) plotting
+
             if output == ATTRIBUTE_PREFIX + "--update" and self.sresstartedplot:
                 self.sendPLOT()
                 return None
-            
-            #------------------- PLOT SETTINGS ---------------------
-            if output != None and ATTRIBUTE_PREFIX in output: # User is trying change the plot settings
+
+            # ------------------- PLOT SETTINGS ---------------------
+            if output != None and ATTRIBUTE_PREFIX in output:  # User is trying change the plot settings
                 try:
-                    if self.ax != None: # If plot was made
-                        output = output.replace(ATTRIBUTE_PREFIX,'')
+                    if self.ax != None:  # If plot was made
+                        output = output.replace(ATTRIBUTE_PREFIX, '')
                         ii = output.find('(')
-                        jj = output.find('{')-2 if '{' in output else output.find(')')
+                        jj = output.find('{') - 2 if '{' in output else output.find(')')
                         attribute = output[:ii]
 
                         filtered_attribute = VALID_ATTRIBUTES.get(attribute, attribute)
 
-                        args = output[ii+1:jj]
+                        args = output[ii + 1:jj]
 
                         if args != '':
                             args = args.split(', ')
                             print(args)
                             for ii, arg in enumerate(args):
-                                if sum(cc.isalpha() for cc in arg) == 0: # Numbers
+                                if sum(cc.isalpha() for cc in arg) == 0:  # Numbers
                                     args[ii] = float(arg)
                                 else:
                                     args[ii] = arg.replace('"', '').replace('\'', '')
                         else:
                             args = ()
 
-                        if '{' in output and '{}' not in output: # read kwargs
-                            kwargs = output[jj+2:output.find(')')]
+                        if '{' in output and '{}' not in output:  # read kwargs
+                            kwargs = output[jj + 2:output.find(')')]
                             kwargs = ast.literal_eval(kwargs)
                         else:
                             kwargs = {}
@@ -746,36 +773,36 @@ class ALPACAKernel(Kernel):
                     self.sres(output, n04count=n04count)
                     return None
 
-                try:    
-                    getattr(self.ax, filtered_attribute)(*args, **kwargs) # Run command
+                try:
+                    getattr(self.ax, filtered_attribute)(*args, **kwargs)  # Run command
                     logging.debug(f'Plot setting {filtered_attribute} changed')
-                    return None    
+                    return None
                 except Exception:
                     # Pass plotting errors to user
                     tb = traceback.format_exc()
-                    self.sres(tb, n04count = 1)
+                    self.sres(tb, n04count=1)
                     return None
 
-            #----------- PLOT DATA -------------------
+            # ----------- PLOT DATA -------------------
             elif output != None and PLOT_PREFIX in output:
-                
-                try: # Normal plot, no settings
-                    output = output.replace(PLOT_PREFIX,'')
+
+                try:  # Normal plot, no settings
+                    output = output.replace(PLOT_PREFIX, '')
                     kk = output.find('}')
-                    settings = output[:kk+1]
-                    data = output[kk+1:]
+                    settings = output[:kk + 1]
+                    data = output[kk + 1:]
 
                     settings = ast.literal_eval(settings)
 
                     ii = data.find('], [')
-                    xx_hex_data, yy_hex_data = (data[2: ii], data[ii+4:data.rfind(']')-1])
-                    
+                    xx_hex_data, yy_hex_data = (data[2: ii], data[ii + 4:data.rfind(']') - 1])
+
                     xx_returned_data = bytearray(binascii.unhexlify(xx_hex_data))
                     yy_returned_data = bytearray(binascii.unhexlify(yy_hex_data))
 
                     try:
                         yy_shape_string = data[data.rfind('('):]
-                        yy_shape =  ast.literal_eval(yy_shape_string)
+                        yy_shape = ast.literal_eval(yy_shape_string)
                     except Exception as e:
                         raise RuntimeError(f'Couldn\'t read shape from string: {yy_shape_string}') from e
 
@@ -806,18 +833,18 @@ class ALPACAKernel(Kernel):
                 except Exception:
                     # Pass plotting errors to user
                     tb = traceback.format_exc()
-                    self.sres(tb, n04count = 1)
+                    self.sres(tb, n04count=1)
                     return None
                 return None
 
-            else: # Not something to plot, just print
+            else:  # Not something to plot, just print
                 self.sres(output, n04count=n04count)
 
-        if self.sresplotmode == 2: # Thonny-eqsue plotting
+        if self.sresplotmode in (2, 3):  # Thonny-eqsue plotting or scope-esque plotting
             # format print("Random walk:", p1, " just random:", p2)
             try:
 
-                if sum(cc.isnumeric() for cc in output) == 0: # Plain text print statement
+                if sum(cc.isnumeric() for cc in output) == 0:  # Plain text print statement
                     self.sres(output)
                     return
 
@@ -827,21 +854,28 @@ class ALPACAKernel(Kernel):
                 return
 
             # the data is good and plotting can commence
-            
-            if not self.sresstartedplot: #or len(data) != self.number_lines: # (re)Instantiation
+
+            if not self.sresstartedplot:  # or len(data) != self.number_lines: # (re)Instantiation
                 try:
-                    #if not self.sresstartedplot:
-                    self.sresPLOTcreator() 
+                    # if not self.sresstartedplot:
+                    self.sresPLOTcreator()
                     self.sresstartedplottime = time.time()
 
                     self.number_lines = len(data)
+
+                    # Sanitize trigger channel input with knowledge of amount of data
+                    if self.sres_trig_chan < 1:
+                        self.sres_trig_chan = 1
+                    elif self.sres_trig_chan > self.number_lines:
+                        self.sres_trig_chan = self.number_lines
+
                     self.yy = np.zeros((0, self.number_lines))
                     self.xx = np.zeros(0)
                     self.lines = self.ax.plot(self.xx, self.yy)
                     for ii, line in enumerate(self.lines):
                         line.set_label(list(data.keys())[ii])
 
-                    self.ax.legend(loc='upper center', ncol = 3)
+                    self.ax.legend(loc='upper center', ncol=3)
                     self.ax.grid()
                     self.ax.set_xlabel("Time [s]")
                 except Exception:
@@ -850,56 +884,73 @@ class ALPACAKernel(Kernel):
                     return None
 
             try:
-
-                if self.sresliveiteration < 100:
-                    self.yy = np.append(self.yy, [list(data.values())], axis = 0)
-                    self.xx = np.append(self.xx, time.time()-self.sresstartedplottime)
+                if self.sresplotmode == 2:
+                    if self.sresliveiteration < 100:
+                        self.yy = np.append(self.yy, [list(data.values())], axis=0)
+                        self.xx = np.append(self.xx, time.time() - self.sresstartedplottime)
+                    else:
+                        self.yy = np.append(self.yy[1:, :], [list(data.values())], axis=0)
+                        self.xx = np.append(self.xx[1:], time.time() - self.sresstartedplottime)
                 else:
-                    self.yy = np.append(self.yy[1:,:], [list(data.values())], axis = 0)
-                    self.xx = np.append(self.xx[1:], time.time()-self.sresstartedplottime)
+                    data_l = list(data.values())
+                    value = data_l[self.sres_trig_chan - 1]
+                    if self.sres_trig_RISE:
+                        if not self.sres_triggered and value > self.sres_trigger_lvl:
+                            self.sres_triggered = True
+                            self.sresstartedplottime = time.time()
+                        if self.sres_triggered and value < self.sres_trigger_lvl:
+                            self.sres_triggered = False
+                    else:
+                        if not self.sres_triggered and value < self.sres_trigger_lvl:
+                            self.sres_triggered = True
+                            self.sresstartedplottime = time.time()
+                        if self.sres_triggered and value > self.sres_trigger_lvl:
+                            self.sres_triggered = False
 
-                #self.ax.cla() # Clear
+                    self.yy = np.append(self.yy, [data_l], axis=0)
+                    self.xx = np.append(self.xx, time.time() - self.sresstartedplottime)
+
+                # self.ax.cla() # Clear
                 for ii, line in enumerate(self.lines):
                     line.set_xdata(self.xx)
-                    line.set_ydata(self.yy[:,ii])
+                    line.set_ydata(self.yy[:, ii])
 
-                #self.ax.autoscale()
+                # self.ax.autoscale()
                 yy_minimum = np.amin(self.yy)
                 yy_maximum = np.amax(self.yy)
-                yy_edge_size = (yy_maximum - yy_minimum)/10
+                yy_edge_size = (yy_maximum - yy_minimum) / 10
 
                 xx_minimum = np.amin(self.xx)
                 xx_maximum = np.amax(self.xx)
-                xx_edge_size = (xx_maximum - xx_minimum)/10
+                xx_edge_size = (xx_maximum - xx_minimum) / 10
 
-
-                self.ax.set_ylim(yy_minimum-yy_edge_size, yy_maximum+yy_edge_size*2) #Extra space for legend
-                self.ax.set_xlim(xx_minimum-xx_edge_size, xx_maximum+xx_edge_size)
-                #self.ax.plot(self.xx, self.yy, label =  # Plot
+                self.ax.set_ylim(yy_minimum - yy_edge_size, yy_maximum + yy_edge_size * 2)  # Extra space for legend
+                self.ax.set_xlim(xx_minimum - xx_edge_size, xx_maximum + xx_edge_size)
+                # self.ax.plot(self.xx, self.yy, label =  # Plot
 
                 if self.sresliveiteration:
-                    self.sendPLOT(update_id = self.plot_uuid) # Use old plot and display
+                    self.sendPLOT(update_id=self.plot_uuid)  # Use old plot and display
                 else:
-                    self.plot_uuid = self.sendPLOT() # Create new plot and store UUID
+                    self.plot_uuid = self.sendPLOT()  # Create new plot and store UUID
 
                 self.sresliveiteration += 1
             except Exception:
                 self.sres(output, n04count=n04count)
-                return None 
+                return None
             return None
 
     def sresPLOTcreator(self):
         # We create the plot with matplotlib.
-        self.fig, self.ax = plt.subplots(1, 1, figsize=(6,4), dpi=100)
+        self.fig, self.ax = plt.subplots(1, 1, figsize=(6, 4), dpi=100)
         self.sresstartedplot = True
-        
+
     def sresPLOTkiller(self):
-        self.sresplotmode = DEFAULT_PLOT_MODE # Reset plot
+        self.sresplotmode = DEFAULT_PLOT_MODE  # Reset plot
         self.sresstartedplot = False
         self.fig, self.ax = (None, None)
         self.sresliveiteration = 0
 
-    def sendPLOT(self, update_id = None):
+    def sendPLOT(self, update_id=None):
         if self.sresstartedplot == 0:
             return None
 
@@ -915,7 +966,7 @@ class ALPACAKernel(Kernel):
 
         # We send the standard output to the
         # client.
-        #self.send_response(
+        # self.send_response(
         #    self.iopub_socket,
         #    'stream', {
         #        'name': 'stdout',
@@ -926,7 +977,7 @@ class ALPACAKernel(Kernel):
         # We prepare the response with our rich
         # data (the plot).
         content = {
-            #'source': 'kernel',
+            # 'source': 'kernel',
 
             # This dictionary may contain
             # different MIME representations of
@@ -937,36 +988,35 @@ class ALPACAKernel(Kernel):
 
             # We can specify the image size
             # in the metadata field.
-            'metadata' : {
-                'image/png' : {
+            'metadata': {
+                'image/png': {
                     'width': 600,
                     'height': 400
                 }
-                },
+            },
 
-            'transient' : {
-                'display_id' : str(plot_uuid)
+            'transient': {
+                'display_id': str(plot_uuid)
             }
         }
-
 
         # We send the display_data message with
         # the contents.
         if update:
 
-            #self.send_response(self.iopub_socket,
+            # self.send_response(self.iopub_socket,
             #    'clear_output', {'wait' : True})
 
             self.send_response(self.iopub_socket,
-                'update_display_data', content)
-            
-            #logging.debug(f'Updated display data')
-        else: # creating new plot
-            self.send_response(self.iopub_socket,
-                    'display_data', content)
+                               'update_display_data', content)
 
-            return plot_uuid # Return new UUID for futre reference
-            #logging.debug(f'Created new display data')
+            # logging.debug(f'Updated display data')
+        else:  # creating new plot
+            self.send_response(self.iopub_socket,
+                               'display_data', content)
+
+            return plot_uuid  # Return new UUID for futre reference
+            # logging.debug(f'Created new display data')
 
     def do_execute(self, code, silent, store_history=True, user_expressions=None, allow_stdin=False):
         self.silent = silent
@@ -976,7 +1026,8 @@ class ALPACAKernel(Kernel):
         interrupted = False
 
         # clear buffer out before executing any commands (except the readbytes one)
-        if self.dc.serialexists() and not re.match("\s*%readbytes|\s*%disconnect|\s*%serialconnect|\s*websocketconnect", code):
+        if self.dc.serialexists() and not re.match("\s*%readbytes|\s*%disconnect|\s*%serialconnect|\s*websocketconnect",
+                                                   code):
             priorbuffer = None
             try:
                 priorbuffer = self.dc.workingserialreadall()
@@ -1003,12 +1054,11 @@ class ALPACAKernel(Kernel):
 
                 for pbline in priorbuffer.splitlines():
                     if deviceconnector.wifimessageignore.match(pbline):
-                        continue   # filter out boring wifi status messages
+                        continue  # filter out boring wifi status messages
                     if pbline:
                         self.sres('[leftinbuffer] ')
                         self.sres(str([pbline]))
                         self.sres('\n')
-
 
         set_next_input_payload = None
         try:
@@ -1018,26 +1068,26 @@ class ALPACAKernel(Kernel):
             interrupted = True
         except OSError as e:
             self.sres("\n\n***OSError [%s]\n\n" % str(e.strerror))
-        #except pexpect.EOF:
+        # except pexpect.EOF:
         #    self.sres(self.asyncmodule.before + 'Restarting Bash')
         #    self.startasyncmodule()
 
-        if self.sresplotmode == 1: # matplotlib-eqsue plotting (after finishing cell)
+        if self.sresplotmode == 1:  # matplotlib-eqsue plotting (after finishing cell)
             self.sendPLOT()
         self.sresPLOTkiller()
 
         if self.srescapturedoutputfile:
             if self.srescapturemode == 2:
-                self.send_response(self.iopub_socket, 'clear_output', {"wait":True})
+                self.send_response(self.iopub_socket, 'clear_output', {"wait": True})
             if self.srescapturemode == 2 or self.srescapturemode == 3:
-                output = "{} lines captured.".format(self.srescapturedlinecount)  # finish off by updating with the correct number captured
-                stream_content = {'name': "stdout", 'text': output }
+                output = "{} lines captured.".format(
+                    self.srescapturedlinecount)  # finish off by updating with the correct number captured
+                stream_content = {'name': "stdout", 'text': output}
                 self.send_response(self.iopub_socket, 'stream', stream_content)
 
             self.srescapturedoutputfile.close()
             self.srescapturedoutputfile = None
             self.srescapturemode = 0
-
 
         if interrupted:
             self.sresSYS("\n\n*** Sending Ctrl-C\n\n")
@@ -1054,5 +1104,6 @@ class ALPACAKernel(Kernel):
 
         # everything already gone out with send_response(), but could detect errors (text between the two \x04s
 
-        payload = [set_next_input_payload]  if set_next_input_payload else []   # {"source": "set_next_input", "text": "some cell content", "replace": False}
+        payload = [
+            set_next_input_payload] if set_next_input_payload else []  # {"source": "set_next_input", "text": "some cell content", "replace": False}
         return {'status': 'ok', 'execution_count': self.execution_count, 'payload': payload, 'user_expressions': {}}
