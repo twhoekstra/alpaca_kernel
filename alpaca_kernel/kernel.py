@@ -259,7 +259,7 @@ def unpack_Thonny_string(output):
 
 class ALPACAKernel(Kernel):
     implementation = 'alpaca_kernel'
-    implementation_version = "v0.2.4"
+    implementation_version = "v0.2.5"
 
     banner = "MicroPython Serializer for ALPACA"
 
@@ -270,7 +270,6 @@ class ALPACAKernel(Kernel):
 
     def __init__(self, **kwargs):
         Kernel.__init__(self, **kwargs)
-
 
         self.silent = False
         self.dc = deviceconnector.DeviceConnector(self.sres, self.sresSYS, self.sresPLOT)
@@ -865,6 +864,12 @@ class ALPACAKernel(Kernel):
 
                     self.number_lines = len(data)
 
+                    self.yy_minimum = 1_000
+                    self.yy_maximum = -1_000
+
+                    self.xx_minimum = 1_000
+                    self.xx_maximum = -1_000
+
                     # Sanitize trigger channel input with knowledge of amount of data
                     if self.sres_trig_chan < 1:
                         self.sres_trig_chan = 1
@@ -924,28 +929,30 @@ class ALPACAKernel(Kernel):
                     line.set_ydata(self.yy[:, ii])
 
                 # self.ax.autoscale()
-                if not self.sres_has_trig:
-                    yy_minimum = np.amin(self.yy)
-                    yy_maximum = np.amax(self.yy)
-                    yy_edge_size = (yy_maximum - yy_minimum) / 10
+                yy_minimum = np.amin(self.yy)
+                yy_maximum = np.amax(self.yy)
+                xx_minimum = np.amin(self.xx)
+                xx_maximum = np.amax(self.xx)
+                if ((yy_minimum < self.yy_minimum)
+                        or (yy_maximum > self.yy_maximum)
+                        or (xx_minimum < self.xx_minimum)
+                        or (xx_maximum > self.xx_maximum)):
+                    self.yy_minimum = min(yy_minimum, self.yy_minimum)
+                    self.yy_maximum = max(yy_maximum, self.yy_maximum)
+                    self.xx_minimum = min(xx_minimum, self.xx_minimum)
+                    self.xx_maximum = max(xx_maximum, self.xx_maximum)
 
-                    xx_minimum = np.amin(self.xx)
-                    xx_maximum = np.amax(self.xx)
+                    yy_edge_size = (yy_maximum - yy_minimum) / 10
                     xx_edge_size = (xx_maximum - xx_minimum) / 10
 
                     self.ax.set_ylim(yy_minimum - yy_edge_size, yy_maximum + yy_edge_size * 2)  # Extra space for legend
                     self.ax.set_xlim(xx_minimum - xx_edge_size, xx_maximum + xx_edge_size)
                 # self.ax.plot(self.xx, self.yy, label =  # Plot
 
-
-
-
                 if self.sresliveiteration:
                     self.sendPLOT(update_id=self.plot_uuid)  # Use old plot and display
                 else:
                     self.plot_uuid = self.sendPLOT()  # Create new plot and store UUID
-
-
 
                 self.sresliveiteration += 1
             except Exception:
