@@ -259,7 +259,7 @@ def unpack_Thonny_string(output):
 
 class ALPACAKernel(Kernel):
     implementation = 'alpaca_kernel'
-    implementation_version = "v0.3.1"
+    implementation_version = "v0.3.2"
 
     banner = "MicroPython Serializer for ALPACA"
 
@@ -881,6 +881,9 @@ class ALPACAKernel(Kernel):
                     # self.lines = self.ax.plot(self.xx, self.yy)
                     self.lines = self.ax.plot(self.xx, self.yy, animated=True)
 
+                    plt.show(block=False)
+                    plt.pause(0.1)
+
                     for ii, line in enumerate(self.lines):
                         line.set_label(list(data.keys())[ii])
 
@@ -896,8 +899,7 @@ class ALPACAKernel(Kernel):
                     self.ax.grid()
                     self.ax.set_xlabel("Time [s]")
 
-                    plt.show(block=False)
-                    plt.pause(0.1)
+
 
                 except Exception as e:
 
