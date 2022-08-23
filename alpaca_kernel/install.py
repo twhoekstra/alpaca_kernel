@@ -26,9 +26,9 @@ def install_my_kernel_spec(user=True, prefix=None):
 
         print('Installing IPython kernel spec of alpaca')
         k = KernelSpecManager()
-        k.install_kernel_spec(td, 'ALPACA', user=user, replace=True, prefix=prefix)
+        k.install_kernel_spec(td, 'alpaca', user=user, replace=True, prefix=prefix)
         
-        h = k.get_kernel_spec("alpaca")
+        h = k.get_kernel_spec("python")
         print("...into", h.resource_dir)
         
 
