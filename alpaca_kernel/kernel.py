@@ -259,13 +259,19 @@ def unpack_Thonny_string(output):
 
 class ALPACAKernel(Kernel):
     implementation = 'alpaca_kernel'
-    implementation_version = "v0.3.7"
+    implementation_version = "v0.3.8"
 
     banner = "MicroPython Serializer for ALPACA"
 
     language_info = {'name': 'micropython',
-                     'codemirror_mode': 'python',
-                     'mimetype': 'text/python',
+                     'version' : '0.3.8',
+                     'mimetype': 'text/x-python',
+                     "codemirror_mode": {
+                         "name": "ipython",
+                         "version": 3
+                     },
+                     "pygments_lexer": "ipython3",
+                     "nbconvert_exporter": "python",
                      'file_extension': '.py'}
 
     def __init__(self, **kwargs):
