@@ -3,22 +3,19 @@
 ![](msedge_oRfTDroDwi.gif)
 
 
-Jupyter kernel to interact with a MicroPython over its serial REPL.  
-
-Also with capabilities to work through the WEBREPL (available on ESP8266 only), 
-do Ctrl-C, transfer files and esptools flashing (useful for deployment).
-See https://github.com/goatchurchprime/jupyter_micropython_developer_notebooks 
-for examples.
+Jupyter kernel to interact with a MicroPython over its serial REPL. 
+Also with capabilities to do Ctrl-C and file transfer. 
+Based on the [Jupyter MicroPython Kernel](https://github.com/goatchurchprime/jupyter_micropython_kernel).
 
 ## Installation
 
 First install Jupyter: http://jupyter.org/install.html (the Python3 version).
-**They strongly recommended you use the [Anaconda Distribution](https://www.anaconda.com/download/)**
+**It is strongly recommended to use the [Anaconda Distribution](https://www.anaconda.com/download/)**
 
-### Via PyPi
+### Via conda
 
 ```
-pip install alpaca_kernel
+conda install -c twh alpaca_kernel
 python -m alpaca_kernel.install
 ```
 
@@ -26,7 +23,7 @@ python -m alpaca_kernel.install
 
 Clone this repository to a directory using TortoiseGIT or with the shell command (ie on a command line):
 
-    git clone https://github.com/goatchurchprime/alpaca_kernel.git
+    git clone https://github.com/twhoekstra/alpaca_kernel
 
 On **Windows**, Install this library (in editable mode) into Python3 using the shell command:
 
@@ -60,9 +57,9 @@ Now run Jupyter notebooks:
     jupyter notebook
 
 In the notebook click the New notebook button in the upper right, you should see your
-MicroPython kernel display name listed.  
+ALPACA kernel display name listed.  
 
-If you have an ESP32 or ESP8266 already running MicroPython, plug it in, put the following command into the first cell and run it:
+If you have a board already running MicroPython, plug it in, put the following command into the first cell and run it:
 
     %serialconnect
     
@@ -71,33 +68,16 @@ If you are on **Linux** and don't have the correct permissions to access the Ser
     sudo usermod -a -G tty your_user_name
     sudo usermod -a -G dialout your_user_name
 
-If you are on **Windows** you need to have the right driver for the USB chip on the ESP32/ESP8266 breakout board.  
+If you are on **Windows** you need to have the right driver for the USB chip on the boad.
 Look for the USB connection in the Device List to identify the supplier and look for instructions relating to that supplier.  
 
 The notebook scans the serial ports (the COM-values in Windows) and tells you the possibilities and tries one of them.  If it picks the wrong port you may need to be more specific and use the command:
 
     %serialconnect --port=COM5
 
-## Uploading the MicroPython firmware onto a new board 
-
-This is done using the `esptool.py`.  The ALPACA Kernel has features to help you execute this command.  
-
-    %esptool erase
-
-and
-
-    %esptool esp8266 /home/julian/executables/micropythonbins/esp8266-20200902-v1.13.bin
-
-or
-
-    %esptool esp32 /home/julian/executables/micropythonbins/esp32-20191006-v1.11-406-g4a6974bea.bin
-
-Download these Micropython firmware files from https://micropython.org/download
-
-
 ## Further notes
 
-There is a micropythondemo.ipynb file in the directory you could 
+There is a alpacademo.ipynb file in the directory you could 
 look at with some of the features shown.
 
 If a cell is taking too long to interrupt, it may respond 
@@ -124,8 +104,7 @@ You can list all the functions with:
 
 ## Debugging
 
-For reference, the notebooks here might be useful:
-  https://github.com/goatchurchprime/jupyter_micropython_developer_notebooks
+For reference, the [original developer notebooks](https://github.com/goatchurchprime/jupyter_micropython_developer_notebooks) here might be useful.
 
 The system works by finding and connecting to a serial line and
 then issuing the enter paste mode command Ctrl-A (hex 0x01)
@@ -160,7 +139,7 @@ kernel itself to be operating asyncronously with the front end notebook UI.  In 
 if the notebook can independently issue Ctrl-C KeyboardInterrupt signals into the kernel, there is no longer 
 a need to worry about what happens when it hangs waiting for input from a serial connection.  
 
-Other known projects that have implemented a ALPACA Kernel are:
+Other known projects that have implemented a Jupyter MicroPython Kernel are:
 * https://github.com/adafruit/alpaca_kernel
 * https://github.com/willingc/circuitpython_kernel
 * https://github.com/TDAbboud/mpkernel

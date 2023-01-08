@@ -460,12 +460,14 @@ class ALPACAKernel(Kernel):
             elif apargs.mode == 'live':
                 self.sresplotmode = 2  # live plotting
 
+            elif apargs.mode == 'livescroll':
+                self.sresplotmode = 4  # live plotting with auto-scroll
+
             elif apargs.mode == 'scope':
                 self.sresplotmode = 3  # scope-style
                 self.sres_trigger_lvl = apargs.trigger_lvl
                 self.sres_trig_RISE = True if apargs.type == 'RISE' else False
                 self.sres_trig_chan = apargs.chan
-
 
             elif apargs.mode == 'none':
                 self.sresplotmode = 0
@@ -739,6 +741,7 @@ class ALPACAKernel(Kernel):
                 return None
 
             # ------------------- PLOT SETTINGS ---------------------
+            # TODO: Make this more robust against LaTeX syntax containing {} in labels.
             if output != None and ATTRIBUTE_PREFIX in output:  # User is trying change the plot settings
                 try:
                     if self.ax != None:  # If plot was made
@@ -789,7 +792,7 @@ class ALPACAKernel(Kernel):
 
                 try:  # Normal plot, no settings
                     output = output.replace(PLOT_PREFIX, '')
-                    kk = output.find('}')
+                    kk = output.rfind('}')
                     settings = output[:kk + 1]
                     data = output[kk + 1:]
 
@@ -841,7 +844,7 @@ class ALPACAKernel(Kernel):
             else:  # Not something to plot, just print
                 self.sres(output, n04count=n04count)
 
-        if self.sresplotmode in (2, 3):  # Thonny-eqsue plotting or scope-esque plotting
+        if self.sresplotmode in (2, 3, 4):  # Thonny-eqsue plotting or scope-esque plotting
             # format print("Random walk:", p1, " just random:", p2)
             try:
 
@@ -892,13 +895,18 @@ class ALPACAKernel(Kernel):
                     return None
 
             try:
-                if self.sresplotmode == 2:
+                if self.sresplotmode == 4: # EEG style (auto-scroll)
                     if self.sresliveiteration < 100:
                         self.yy = np.append(self.yy, [list(data.values())], axis=0)
                         self.xx = np.append(self.xx, time.time() - self.sresstartedplottime)
                     else:
                         self.yy = np.append(self.yy[1:, :], [list(data.values())], axis=0)
                         self.xx = np.append(self.xx[1:], time.time() - self.sresstartedplottime)
+
+                elif self.sresplotmode == 2: # Live plot (no scroll)
+                    self.yy = np.append(self.yy, [list(data.values())], axis=0)
+                    self.xx = np.append(self.xx, time.time() - self.sresstartedplottime)
+
                 else:
                     data_l = list(data.values())
                     value = data_l[self.sres_trig_chan - 1]
