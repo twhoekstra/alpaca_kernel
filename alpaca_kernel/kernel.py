@@ -4,9 +4,6 @@ import binascii
 import logging
 import os
 import re
-import select
-import socket
-import sys
 import traceback
 import time
 import urllib
@@ -15,11 +12,8 @@ from io import BytesIO
 
 import argparse  # use of argparse for handling the %commands in the cells
 import shlex  # use of shlex for handling the %commands in the cells
-import IPython
 import matplotlib.pyplot as plt
 import numpy as np
-import serial
-import serial.tools.list_ports
 import websocket  # only for WebSocketConnectionClosedException
 from ipykernel.kernelbase import Kernel
 
@@ -61,6 +55,8 @@ ap_plot.add_argument('--mode', type=str, default='matplotlib')
 ap_plot.add_argument('--trigger_lvl', type=float, default=1.0)
 ap_plot.add_argument('--type', type=str, default='RISE')
 ap_plot.add_argument('--chan', type=int, default=1)
+
+ap_bypass = argparse.ArgumentParser(prog="%python", add_help=False)
 
 ap_serialconnect = argparse.ArgumentParser(prog="%serialconnect", add_help=False)
 ap_serialconnect.add_argument('--raw', help='Just open connection', action='store_true')
@@ -259,7 +255,7 @@ def unpack_Thonny_string(output):
 
 class ALPACAKernel(Kernel):
     implementation = 'alpaca_kernel'
-    implementation_version = "v0.4.1"
+    implementation_version = "v0.4.2"
 
     banner = "MicroPython Serializer for ALPACA"
 
@@ -288,6 +284,7 @@ class ALPACAKernel(Kernel):
         self.sres_trig_chan = 1
         self.sresstartedplot = 0  #
         self.sresliveiteration = 0
+        self.bypass = False
 
     def interpretpercentline(self, percentline, cellcontents):
         try:
@@ -474,6 +471,9 @@ class ALPACAKernel(Kernel):
             else:
                 self.sresplotmode = DEFAULT_PLOT_MODE
             return cellcontents
+
+        if percentcommand == ap_bypass.prog:
+            self.bypass = True
 
         if percentcommand == ap_capture.prog:
             apargs = parseap(ap_capture, percentstringargs[1:])
